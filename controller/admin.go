@@ -63,7 +63,7 @@ func (*Admin) LogStatus(c *gin.Context) {
 	// 获取session
 	session := SessionGet(c, info.Name)
 	if session == nil {
-		c.JSON(http.StatusOK, ResponseNew(c, "未登录"))
+		c.JSON(http.StatusOK, ResponseNew(c, nil))
 		return
 	}
 	// 响应

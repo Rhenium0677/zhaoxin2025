@@ -7,6 +7,14 @@ const (
 	Super  AdminLevel = "super"
 )
 
+type Department string
+
+const (
+	Tech  Department = "tech"
+	Video Department = "video"
+	Art   Department = "art"
+)
+
 type Admin struct {
 	BaseModel
 	NetID    string     `gorm:"column:netid;type:varchar(10);unique;not null;comment:'NetID'"`
