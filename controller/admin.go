@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
+	"zhaoxin2025/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,7 +31,7 @@ func (*Admin) Login(c *gin.Context) {
 		return
 	}
 	// 设置session
-	SessionSet(c, data.NetID, UserSession{
+	SessionSet(c, "user-session", UserSession{
 		ID:       NetID(data.NetID),
 		Username: data.Name,
 		Level:    Level(data.Level),
@@ -61,13 +62,50 @@ func (*Admin) LogStatus(c *gin.Context) {
 		return
 	}
 	// 获取session
-	session := SessionGet(c, info.Name)
+	session := SessionGet(c, "user-session")
 	if session == nil {
 		c.JSON(http.StatusOK, ResponseNew(c, nil))
 		return
 	}
 	// 响应
 	c.JSON(http.StatusOK, ResponseNew(c, session))
+}
+
+// 权限1
+// 管理员的更新
+func (*Admin) Update(c *gin.Context) {
+	var info struct {
+		NetID    string `json:"netid" binding:"required,len=10,numeric"`
+		Name     string `json:"name" binding:"omitempty"`
+		Password string `json:"password" binding:"omitempty"`
+	}
+	if err := c.ShouldBindJSON(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	// 更新管理员信息
+	err := srv.Admin.Update(info.NetID, info.Name, info.Password)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
+
+func (*Admin) GetStu(c *gin.Context) {
+	var info service.SelectStu
+	if err := c.ShouldBindJSON(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	// 获取学生信息
+	data, err := srv.Admin.GetStu(info)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	// 响应
+	c.JSON(http.StatusOK, ResponseNew(c, data))
 }
 
 // 权限2
@@ -91,7 +129,7 @@ func (*Admin) Register(c *gin.Context) {
 		return
 	}
 	// 设置session
-	SessionSet(c, info.Name, UserSession{
+	SessionSet(c, "user-session", UserSession{
 		ID:       NetID(info.NetID),
 		Username: info.Name,
 		Level:    Level(info.Level),
