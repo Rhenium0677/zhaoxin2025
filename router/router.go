@@ -13,12 +13,13 @@ func InitRouter(r *gin.Engine) {
 	{
 		adminRouter := apiRouter.Group("/admin")
 		{
-			adminRouter.POST("/login", ctr.Admin.Login)
-			adminRouter.DELETE("/logout", ctr.Admin.Logout)
-			adminRouter.GET("/logstatus", ctr.Admin.LogStatus)
+			adminRouter.POST("", ctr.Admin.Login)
+			adminRouter.DELETE("", ctr.Admin.Logout)
+			adminRouter.GET("/", ctr.Admin.LogStatus)
 			// adminRouter.Use(middleware.CheckRole(1))
-			adminRouter.PUT("/:id", ctr.Admin.Update)
+			adminRouter.PUT("/", ctr.Admin.Update)
 			adminRouter.GET("/stu", ctr.Admin.GetStu)
+			adminRouter.PUT("/stu", ctr.Admin.UpdateStu)
 			// adminRouter.Use(middleware.CheckRole(2))
 			adminRouter.POST("/register", ctr.Admin.Register)
 		}
@@ -26,9 +27,9 @@ func InitRouter(r *gin.Engine) {
 		{
 			// queRouter.Use(middleware.CheckRole(1))
 			queRouter.GET("", ctr.Que.Get)
-			queRouter.POST("", ctr.Que.New)
-			queRouter.DELETE("/delete", ctr.Que.Delete)
-			queRouter.PUT("/:id", ctr.Que.Update)
+			queRouter.POST(":id", ctr.Que.New)
+			queRouter.DELETE(":id", ctr.Que.Delete)
+			queRouter.PUT(":id", ctr.Que.Update)
 		}
 	}
 }

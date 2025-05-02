@@ -22,7 +22,7 @@ func (*Admin) Login(netid string, password string) (model.Admin, error) {
 	}
 	// 检查密码是否正确
 	if nosecret != password {
-		return model.Admin{}, common.ErrNew(errors.New("密码错误"), common.OpErr)
+		return model.Admin{}, common.ErrNew(errors.New("用户名或密码错误"), common.OpErr)
 	}
 	return admin, nil
 }
@@ -49,7 +49,7 @@ func (*Admin) Update(netid string, name string, password string) error {
 	return nil
 }
 
-// 获取一个学生信息
+// 筛选并获取学生信息
 func (*Admin) GetStu(info SelectStu) ([]model.Stu, error) {
 	var data []model.Stu
 	if err := model.DB.Model(&model.Stu{}).Where(&info).Find(&data).Error; err != nil {
@@ -57,6 +57,25 @@ func (*Admin) GetStu(info SelectStu) ([]model.Stu, error) {
 		return nil, common.ErrNew(err, common.SysErr)
 	}
 	return data, nil
+}
+
+// 更新一个学生信息
+func (*Admin) UpdateStu(info UpdateStu) error {
+	// 检查学生是否存在
+	var count int64
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", info.NetID).Count(&count).Error; err != nil {
+		logger.DatabaseLogger.Errorf("检查学生是否存在失败：%v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	if count == 0 {
+		return common.ErrNew(errors.New("学生不存在"), common.OpErr)
+	}
+	// 更新学生信息
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", info.NetID).Updates(info).Error; err != nil {
+		logger.DatabaseLogger.Errorf("更新学生信息失败：%v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	return nil
 }
 
 // 管理员注册

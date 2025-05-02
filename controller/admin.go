@@ -54,13 +54,6 @@ func (*Admin) Logout(c *gin.Context) {
 
 // 管理员的登录状态
 func (*Admin) LogStatus(c *gin.Context) {
-	var info struct {
-		Name string `json:"name" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&info); err != nil {
-		c.Error(common.ErrNew(err, common.ParamErr))
-		return
-	}
 	// 获取session
 	session := SessionGet(c, "user-session")
 	if session == nil {
@@ -92,6 +85,7 @@ func (*Admin) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
+// 筛选并获取学生信息
 func (*Admin) GetStu(c *gin.Context) {
 	var info service.SelectStu
 	if err := c.ShouldBindJSON(&info); err != nil {
@@ -106,6 +100,22 @@ func (*Admin) GetStu(c *gin.Context) {
 	}
 	// 响应
 	c.JSON(http.StatusOK, ResponseNew(c, data))
+}
+
+// 更新一个学生信息
+func (*Admin) UpdateStu(c *gin.Context) {
+	var info service.UpdateStu
+	if err := c.ShouldBindJSON(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	// 更新学生信息
+	if err := srv.Admin.UpdateStu(info); err != nil {
+		c.Error(err)
+		return
+	}
+	// 响应
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
 // 权限2
