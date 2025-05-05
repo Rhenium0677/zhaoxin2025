@@ -2,8 +2,9 @@ package controller
 
 type Controller struct {
 	Admin
-	Que
 	Stu
+	Interv
+	Que
 }
 
 func New() *Controller {

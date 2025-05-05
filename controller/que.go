@@ -23,7 +23,7 @@ func (*Que) Get(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	err, data := srv.Que.Get(info.Question, info.Department, info.Url, info.PagerForm)
+	data, err := srv.Que.Get(info.Question, info.Department, info.Url, info.PagerForm)
 	if err != nil {
 		c.Error(err)
 		return

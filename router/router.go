@@ -23,13 +23,25 @@ func InitRouter(r *gin.Engine) {
 			// adminRouter.Use(middleware.CheckRole(2))
 			adminRouter.POST("/register", ctr.Admin.Register)
 		}
+		stuRouter := apiRouter.Group("/stu")
+		{
+			stuRouter.DELETE("", ctr.Stu.Logout)
+			stuRouter.PUT("", ctr.Stu.Update)
+		}
+		intervRouter := apiRouter.Group("/interv")
+		{
+			intervRouter.POST("", ctr.Interv.New)
+			intervRouter.DELETE("", ctr.Interv.Delete)
+			intervRouter.PUT("", ctr.Interv.Update)
+			intervRouter.GET("", ctr.Interv.Get)
+		}
 		queRouter := apiRouter.Group("/que")
 		{
 			// queRouter.Use(middleware.CheckRole(1))
 			queRouter.GET("", ctr.Que.Get)
-			queRouter.POST(":id", ctr.Que.New)
+			queRouter.POST("", ctr.Que.New)
 			queRouter.DELETE(":id", ctr.Que.Delete)
-			queRouter.PUT(":id", ctr.Que.Update)
+			queRouter.PUT("", ctr.Que.Update)
 		}
 	}
 }

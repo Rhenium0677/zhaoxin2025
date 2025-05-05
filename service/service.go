@@ -3,6 +3,7 @@ package service
 type Service struct {
 	Admin
 	Stu
+	Interv
 	Que
 }
 
