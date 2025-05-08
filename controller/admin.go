@@ -31,7 +31,7 @@ func (*Admin) Login(c *gin.Context) {
 		return
 	}
 	// 设置session
-	SessionSet(c, "user-session", UserSession{
+	SessionSet(c, "admin-session", UserSession{
 		ID:       NetID(data.NetID),
 		Username: data.Name,
 		Level:    Level(data.Level),
@@ -42,20 +42,20 @@ func (*Admin) Login(c *gin.Context) {
 // 管理员的注销
 func (*Admin) Logout(c *gin.Context) {
 	// 检查是否未登录
-	session := SessionGet(c, "user-session")
+	session := SessionGet(c, "admin-session")
 	if session == nil {
 		c.Error(common.ErrNew(errors.New("未登录"), common.OpErr))
 		return
 	}
 	// 注销登录
-	SessionClear(c)
+	SessionDelete(c, "admin-session")
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
 // 管理员的登录状态
 func (*Admin) LogStatus(c *gin.Context) {
 	// 获取session
-	session := SessionGet(c, "user-session")
+	session := SessionGet(c, "admin-session")
 	if session == nil {
 		c.JSON(http.StatusOK, ResponseNew(c, nil))
 		return

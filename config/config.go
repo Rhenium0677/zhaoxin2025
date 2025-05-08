@@ -9,6 +9,7 @@ import (
 var Config struct {
 	AppProd      bool
 	AppMode      string
+	AppID        string
 	AppSecret    string
 	AppLanguage  string
 	MysqlHost    string
@@ -37,6 +38,7 @@ func initConfig() {
 	} else {
 		Config.AppMode = "debug"
 	}
+	Config.AppID = envOr("APP_ID", "wx1234567890")
 	Config.AppSecret = envOr("APP_SECRET", "gin-example:secret")
 	Config.AppLanguage = envOr("APP_LANGUAGE", "en")
 	Config.MysqlHost = envOr("APP_MYSQL_HOST", "127.0.0.1")

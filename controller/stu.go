@@ -16,14 +16,22 @@ func (*Stu) Login(c *gin.Context) {
 		NetID string `json:"netid" binding:"required,len=10,numeric"`
 		Code  string `json:"code" binding:"required"`
 	}
-	//
-	//
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-
-	c.JSON(http.StatusOK, ResponseNew(c, nil))
+	// token, openid, err := srv.Stu.Login(info.NetID, info.Code)
+	// if err != nil {
+	// 	c.Error(err)
+	// 	return
+	// }
+	// SessionSet(c, "user-session", UserSession{
+	// 	ID:    NetID(info.NetID),
+	// 	Level: 0,
+	// })
+	// c.JSON(http.StatusOK, ResponseNew(c, gin.H{
+	// 	"token": token,
+	// }))
 }
 
 // 学生登出
@@ -32,7 +40,7 @@ func (*Stu) Logout(c *gin.Context) {
 		c.Error(common.ErrNew(nil, common.AuthErr))
 		return
 	}
-	SessionClear(c)
+	SessionDelete(c, "user-session")
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 

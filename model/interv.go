@@ -12,4 +12,5 @@ type Interv struct {
 	Que         Que        `gorm:"foreignKey:ID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Star        int        `gorm:"column:star;not null;default:0;comment:'星级'"`
 	Evaluation  string     `gorm:"column:evaluation;not null;comment:'评价'"`
+	Pass        string     `gorm:"column:pass;not null;type:enum('true','false');default:'false';comment:'是否通过面试'"`
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"time"
+	"zhaoxin2025/common"
 	"zhaoxin2025/model"
 )
 
@@ -53,6 +54,15 @@ type IntervUpdate struct {
 	Department  model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
 	Star        int              `json:"star" binding:"omitempty"`
 	Evaluation  string           `json:"evaluation" binding:"omitempty"`
+	Pass        string           `json:"pass" binding:"omitempty,oneof=true false"`
+}
+type GetInterv struct {
+	ID          int              `json:"id" binding:"omitempty"`
+	Department  model.Department `json:"department,omitempty"`
+	Interviewer string           `json:"interviewer,omitempty"`
+	Pass        string           `json:"pass" binding:"omitempty,oneof=true false"`
+	Date        time.Time        `json:"date,omitempty"`
+	common.PagerForm
 }
 
 // Que 相关结构体
@@ -60,6 +70,5 @@ type UpdateQue struct {
 	ID         int              `json:"id" binding:"required"`
 	QueID      int              `json:"queid" binding:"omitempty"`
 	Department model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
-	Pass       bool             `json:"pass" binding:"omitempty"`
 	Times      int              `json:"times" binding:"omitempty"`
 }
