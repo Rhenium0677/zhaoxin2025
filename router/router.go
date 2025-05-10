@@ -10,21 +10,24 @@ func InitRouter(r *gin.Engine) {
 	r.Use(middleware.Error)
 	r.Use(middleware.GinLogger(), middleware.GinRecovery(true))
 	apiRouter := r.Group("/api")
+	apiRouter.GET("/session", ctr.RefreshSession, middleware.CheckRole(1))
 	{
 		adminRouter := apiRouter.Group("/admin")
 		{
 			adminRouter.POST("", ctr.Admin.Login)
 			adminRouter.DELETE("", ctr.Admin.Logout)
 			adminRouter.GET("/", ctr.Admin.LogStatus)
-			// adminRouter.Use(middleware.CheckRole(1))
+			// adminRouter.Use(middleware.CheckRole(2))
 			adminRouter.PUT("/", ctr.Admin.Update)
 			adminRouter.GET("/stu", ctr.Admin.GetStu)
 			adminRouter.PUT("/stu", ctr.Admin.UpdateStu)
-			// adminRouter.Use(middleware.CheckRole(2))
+			// adminRouter.Use(middleware.CheckRole(3))
 			adminRouter.POST("/register", ctr.Admin.Register)
 		}
 		stuRouter := apiRouter.Group("/stu")
 		{
+			stuRouter.POST("", ctr.Stu.Login)
+			stuRouter.GET("", ctr.Stu.LogStatus)
 			stuRouter.DELETE("", ctr.Stu.Logout)
 			stuRouter.PUT("", ctr.Stu.Update)
 		}

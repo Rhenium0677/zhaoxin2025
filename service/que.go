@@ -58,7 +58,8 @@ func (*Que) Delete(ids []int) error {
 // 更新问题
 // 根据提供的ID和信息更新单个问题记录
 func (*Que) Update(info map[string]interface{}) error {
-	id := info["id"] // 从传入的map中获取问题ID
+	// 从传入的map中获取问题ID
+	id := info["id"]
 	// 使用 GORM 的 Updates 方法，根据ID更新问题信息
 	// Updates 方法会忽略 map 中模型不存在的字段
 	if err := model.DB.Model(&model.Que{}).Where("id = ?", id).Updates(&info).Error; err != nil {

@@ -13,38 +13,25 @@ import (
 type Interv struct{}
 
 // Get 按条件查询面试记录，支持分页
-func (*Interv) Get(info GetInterv) ([]model.Interv, error) {
+func (*Interv) Get(info map[string]interface{}) ([]model.Interv, error) {
 	var data []model.Interv
-	db := model.DB.Model(&model.Interv{})
+	db := model.DB.Model(&model.Interv{}).Where(info)
 
-	// 根据ID筛选
-	if info.ID != 0 {
-		db = db.Where("id = ?", info.ID)
-	} else {
-		// 根据部门筛选
-		if info.Department != "" {
-			db = db.Where("department = ?", info.Department)
-		}
-		// 根据面试官筛选
-		if info.Interviewer != "" {
-			db = db.Where("interviewer = ?", info.Interviewer)
-		}
-		// 根据通过状态筛选
-		if info.Pass != "" {
-			db = db.Where("pass = ?", info.Pass)
-		}
-		// 根据日期筛选
-		if !info.Date.IsZero() {
-			dayRange := DayRange(info.Date)
-			db = db.Where("time BETWEEN ? AND ?", dayRange.Start, dayRange.End)
-		}
+	// 根据日期筛选
+	if info["date"] != nil {
+		date := info["date"].(time.Time)
+		dayRange := DayRange(date)
+		db = db.Where("time BETWEEN ? AND ?", dayRange.Start, dayRange.End)
 	}
 
 	// 执行分页查询
-	if err := db.Offset((info.Page - 1) * info.Limit).Limit(info.Limit).Find(&data).Error; err != nil {
+	page := info["page"].(int)
+	limit := info["limit"].(int)
+	if err := db.Offset((page - 1) * limit).Limit(limit).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
+
 	// 检查是否有查询结果
 	if len(data) == 0 {
 		return nil, common.ErrNew(errors.New("没有查询到面试记录"), common.OpErr)

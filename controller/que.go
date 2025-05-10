@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
-	"zhaoxin2025/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,7 +37,11 @@ func (*Que) Get(c *gin.Context) {
 // 接收问题列表并创建新的问题记录
 func (*Que) New(c *gin.Context) {
 	var info struct {
-		List []service.NewQue `json:"list" binding:"required,dive"`
+		List []struct {
+			Question   string           `json:"question" binding:"required"`
+			Department model.Department `json:"department" binding:"required,oneof=tech video art"`
+			Url        string           `json:"url" binding:"omitempty"`
+		} `json:"list" binding:"required,dive"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
@@ -84,7 +87,12 @@ func (*Que) Delete(c *gin.Context) {
 // 更新问题
 // 根据提供的问题信息更新指定ID的问题记录
 func (*Que) Update(c *gin.Context) {
-	var info service.UpdateQue
+	var info struct {
+		ID         int              `json:"id" binding:"required"`
+		Question   string           `json:"question" binding:"omitempty"`
+		Department model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
+		Times      int              `json:"times" binding:"omitempty"`
+	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return

@@ -24,9 +24,9 @@ func NetID(netid string) int {
 func Level(level model.AdminLevel) int {
 	switch level {
 	case model.Super:
-		return 2
+		return 3
 	case model.Normal:
-		return 1
+		return 2
 	default:
 		return 0 // 默认值，处理未知的管理员级别
 	}

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
-	"zhaoxin2025/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -87,7 +86,17 @@ func (*Admin) Update(c *gin.Context) {
 
 // 筛选并获取学生信息
 func (*Admin) GetStu(c *gin.Context) {
-	var info service.SelectStu
+	var info struct {
+		NetID       string           `json:"netid" binding:"omitempty,len=10,numeric"`
+		Name        string           `json:"name" binding:"omitempty"`
+		Phone       string           `json:"phone" binding:"omitempty,len=11,numeric"`
+		School      string           `json:"school" binding:"omitempty"`
+		First       model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
+		Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
+		Pass        string           `json:"pass" binding:"omitempty,oneof=true false"`
+		Interviewer string           `json:"interviewer" binding:"omitempty"`
+		Star        int              `json:"star" binding:"omitempty"`
+	}
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
@@ -104,7 +113,22 @@ func (*Admin) GetStu(c *gin.Context) {
 
 // 更新一个学生信息
 func (*Admin) UpdateStu(c *gin.Context) {
-	var info service.UpdateStu
+	var info struct {
+		NetID    string           `json:"netid" binding:"required,len=10,numeric"`
+		Name     string           `json:"name" binding:"omitempty"`
+		Phone    string           `json:"phone" binding:"omitempty"`
+		School   string           `json:"school" binding:"omitempty"`
+		Mastered string           `json:"mastered" binding:"omitempty"`
+		ToMaster string           `json:"tomaster" binding:"omitempty"`
+		First    model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
+		Second   model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
+		// QueID       int              `json:"que_id" binding:"omitempty,numeric"`
+		// QueTime     time.Time        `json:"que_time" binding:"omitempty"`
+		Pass        string `json:"pass" binding:"omitempty, oneof=true false"`
+		Interviewer string `json:"interviewer" binding:"omitempty"`
+		Evaluation  string `json:"evaluation" binding:"omitempty"`
+		Star        int    `json:"star" binding:"omitempty"`
+	}
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
