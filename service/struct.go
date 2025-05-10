@@ -14,24 +14,25 @@ type SelectStu struct {
 	School      string           `json:"school" binding:"omitempty"`
 	First       model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
 	Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
+	Pass        string           `json:"pass" binding:"omitempty,oneof=true false"`
 	Interviewer string           `json:"interviewer" binding:"omitempty"`
 	Star        int              `json:"star" binding:"omitempty"`
 }
 type UpdateStu struct {
-	NetID       string           `json:"netid" binding:"required,len=10,numeric"`
-	Name        string           `json:"name" binding:"omitempty"`
-	Phone       string           `json:"phone" binding:"omitempty"`
-	School      string           `json:"school" binding:"omitempty"`
-	Mastered    string           `json:"mastered" binding:"omitempty"`
-	ToMaster    string           `json:"tomaster" binding:"omitempty"`
-	First       model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
-	Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
-	QueID       int              `json:"que_id" binding:"omitempty,numeric"`
-	QueTime     time.Time        `json:"que_time" binding:"omitempty"`
-	Interv      bool             `json:"interv" binding:"omitempty"`
-	Interviewer string           `json:"interviewer" binding:"omitempty"`
-	Evaluation  string           `json:"evaluation" binding:"omitempty"`
-	Star        int              `json:"star" binding:"omitempty"`
+	NetID    string           `json:"netid" binding:"required,len=10,numeric"`
+	Name     string           `json:"name" binding:"omitempty"`
+	Phone    string           `json:"phone" binding:"omitempty"`
+	School   string           `json:"school" binding:"omitempty"`
+	Mastered string           `json:"mastered" binding:"omitempty"`
+	ToMaster string           `json:"tomaster" binding:"omitempty"`
+	First    model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
+	Second   model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
+	// QueID       int              `json:"que_id" binding:"omitempty,numeric"`
+	// QueTime     time.Time        `json:"que_time" binding:"omitempty"`
+	Pass        string `json:"pass" binding:"omitempty, oneof=true false"`
+	Interviewer string `json:"interviewer" binding:"omitempty"`
+	Evaluation  string `json:"evaluation" binding:"omitempty"`
+	Star        int    `json:"star" binding:"omitempty"`
 }
 
 // Stu 相关结构体
@@ -47,28 +48,32 @@ type StuUpdate struct {
 
 // Interv 相关结构体
 type IntervUpdate struct {
-	ID          int              `json:"id" binding:"required"`
+	NetID       string           `json:"netid" binding:"required"`
 	Interviewer string           `json:"interviewer" binding:"omitempty"`
 	Time        time.Time        `json:"time" binding:"omitempty"`
-	NetID       string           `json:"netid" binding:"omitempty,len=10,numeric"`
 	Department  model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
 	Star        int              `json:"star" binding:"omitempty"`
 	Evaluation  string           `json:"evaluation" binding:"omitempty"`
 	Pass        string           `json:"pass" binding:"omitempty,oneof=true false"`
 }
 type GetInterv struct {
-	ID          int              `json:"id" binding:"omitempty"`
-	Department  model.Department `json:"department,omitempty"`
-	Interviewer string           `json:"interviewer,omitempty"`
-	Pass        string           `json:"pass" binding:"omitempty,oneof=true false"`
-	Date        time.Time        `json:"date,omitempty"`
+	ID          int              `form:"id" binding:"omitempty"`
+	Department  model.Department `form:"department,omitempty"`
+	Interviewer string           `form:"interviewer,omitempty"`
+	Pass        string           `form:"pass" binding:"omitempty,oneof=true false"`
+	Date        time.Time        `form:"date" binding:"omitempty"`
 	common.PagerForm
 }
 
 // Que 相关结构体
+type NewQue struct {
+	Question   string           `json:"question" binding:"required"`
+	Department model.Department `json:"department" binding:"required,oneof=tech video art"`
+	Url        string           `json:"url" binding:"omitempty"`
+}
 type UpdateQue struct {
 	ID         int              `json:"id" binding:"required"`
-	QueID      int              `json:"queid" binding:"omitempty"`
+	Question   string           `json:"question" binding:"omitempty"`
 	Department model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
 	Times      int              `json:"times" binding:"omitempty"`
 }

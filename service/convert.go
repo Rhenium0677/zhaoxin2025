@@ -1,6 +1,8 @@
 package service
 
-import "time"
+import (
+	"time"
+)
 
 // TimeRange 定义一个时间范围结构体
 // 包含开始时间和结束时间

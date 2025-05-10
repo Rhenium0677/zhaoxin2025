@@ -13,7 +13,7 @@ import (
 // Encrypt 加密函数
 func Encrypt(text string) (string, error) {
 	// 创建 AES 加密器
-	block, err := aes.NewCipher([]byte(config.Config.AppSecret))
+	block, err := aes.NewCipher([]byte(config.Config.AppSalt))
 	if err != nil {
 		return "", err
 	}
@@ -36,7 +36,7 @@ func Encrypt(text string) (string, error) {
 // Decrypt 解密函数
 func Decrypt(ciphertext string) (string, error) {
 	// 创建 AES 加密器
-	block, err := aes.NewCipher([]byte(config.Config.AppSecret))
+	block, err := aes.NewCipher([]byte(config.Config.AppSalt))
 	if err != nil {
 		return "", err
 	}

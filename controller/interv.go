@@ -15,7 +15,7 @@ type Interv struct{}
 func (*Interv) Get(c *gin.Context) {
 	// 绑定查询参数
 	var info service.GetInterv
-	if err := c.ShouldBindQuery(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
@@ -35,7 +35,7 @@ func (*Interv) New(c *gin.Context) {
 	var info struct {
 		Times []time.Time `json:"times" binding:"required"`
 	}
-	if err := c.ShouldBindJSON(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
@@ -59,12 +59,12 @@ func (*Interv) Update(c *gin.Context) {
 		return
 	}
 	// 更新面试记录
-	if err := srv.Interv.Update(info); err != nil {
+	if err := srv.Interv.Update(Struct2Map(info)); err != nil {
 		c.Error(err)
 		return
 	}
-	// 返回空响应
-	c.JSON(http.StatusOK, nil)
+	// 响应
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
 // 删除面试记录
@@ -73,7 +73,7 @@ func (*Interv) Delete(c *gin.Context) {
 	var info struct {
 		ID []int `json:"id" binding:"required"`
 	}
-	if err := c.ShouldBindJSON(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}

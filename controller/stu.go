@@ -16,22 +16,21 @@ func (*Stu) Login(c *gin.Context) {
 		NetID string `json:"netid" binding:"required,len=10,numeric"`
 		Code  string `json:"code" binding:"required"`
 	}
-	if err := c.ShouldBindJSON(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	// token, openid, err := srv.Stu.Login(info.NetID, info.Code)
-	// if err != nil {
-	// 	c.Error(err)
-	// 	return
-	// }
-	// SessionSet(c, "user-session", UserSession{
-	// 	ID:    NetID(info.NetID),
-	// 	Level: 0,
-	// })
-	// c.JSON(http.StatusOK, ResponseNew(c, gin.H{
-	// 	"token": token,
-	// }))
+	openid, err := srv.Stu.Login(info.NetID, info.Code)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	SessionSet(c, "user-session", UserSession{
+		ID:       NetID(info.NetID),
+		Username: openid,
+		Level:    0,
+	})
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
 // 学生登出
@@ -46,14 +45,12 @@ func (*Stu) Logout(c *gin.Context) {
 
 // 学生修改信息
 func (*Stu) Update(c *gin.Context) {
-	//
-	//
 	var info service.StuUpdate
-	if err := c.ShouldBindJSON(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	if err := srv.Stu.Update(info); err != nil {
+	if err := srv.Stu.Update(Struct2Map(info)); err != nil {
 		c.Error(err)
 		return
 	}

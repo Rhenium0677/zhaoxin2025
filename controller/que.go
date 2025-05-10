@@ -12,6 +12,7 @@ import (
 type Que struct{}
 
 // 获取问题
+// 根据提供的筛选条件（问题内容、部门、URL）和分页信息获取问题列表
 func (*Que) Get(c *gin.Context) {
 	var info struct {
 		Question   string           `form:"question" binding:"omitempty"`
@@ -19,10 +20,12 @@ func (*Que) Get(c *gin.Context) {
 		Url        string           `form:"url" binding:"omitempty"`
 		common.PagerForm
 	}
-	if err := c.ShouldBindQuery(&info); err != nil {
+	// 绑定并验证查询参数
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	// 调用服务层获取问题数据
 	data, err := srv.Que.Get(info.Question, info.Department, info.Url, info.PagerForm)
 	if err != nil {
 		c.Error(err)
@@ -32,15 +35,26 @@ func (*Que) Get(c *gin.Context) {
 }
 
 // 新建问题
+// 接收问题列表并创建新的问题记录
 func (*Que) New(c *gin.Context) {
 	var info struct {
-		List []model.Que `json:"list" binding:"required,dive"`
+		List []service.NewQue `json:"list" binding:"required,dive"`
 	}
-	if err := c.ShouldBindJSON(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	err := srv.Que.New(info.List)
+	// 将问题列表转换为 []model.Que 格式
+	// 以便于数据库操作
+	var queInfo []model.Que
+	for _, que := range info.List {
+		queInfo = append(queInfo, model.Que{
+			Question:   que.Question,
+			Department: que.Department,
+			Url:        que.Url,
+		})
+	}
+	err := srv.Que.New(queInfo)
 	if err != nil {
 		c.Error(err)
 		return
@@ -49,14 +63,16 @@ func (*Que) New(c *gin.Context) {
 }
 
 // 删除问题
+// 根据提供的问题ID列表删除相应的问题记录
 func (*Que) Delete(c *gin.Context) {
 	var info struct {
 		IDs []int `json:"ids" binding:"required,dive,gte=1"`
 	}
-	if err := c.ShouldBindJSON(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	// 调用服务层删除问题
 	err := srv.Que.Delete(info.IDs)
 	if err != nil {
 		c.Error(err)
@@ -66,13 +82,14 @@ func (*Que) Delete(c *gin.Context) {
 }
 
 // 更新问题
+// 根据提供的问题信息更新指定ID的问题记录
 func (*Que) Update(c *gin.Context) {
 	var info service.UpdateQue
-	if err := c.ShouldBindJSON(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	err := srv.Que.Update(info)
+	err := srv.Que.Update(Struct2Map(info))
 	if err != nil {
 		c.Error(err)
 		return

@@ -80,18 +80,19 @@ func (*Interv) New(info []time.Time) ([]time.Time, error) {
 }
 
 // Update 更新面试记录信息
-func (*Interv) Update(info IntervUpdate) error {
+func (*Interv) Update(info map[string]interface{}) error {
+	netid := info["netid"].(string)
 	var count int64
 	// 检查要更新的记录是否存在
-	if err := model.DB.Model(&model.Interv{}).Where("id = ?", info.ID).Count(&count).Error; err != nil {
+	if err := model.DB.Model(&model.Interv{}).Where("net_id = ?", netid).Count(&count).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	if count == 0 {
 		return common.ErrNew(errors.New("面试记录不存在"), common.OpErr)
 	}
-	// 执行更新操作
-	if err := model.DB.Model(&model.Interv{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
+	// // 执行更新操作
+	if err := model.DB.Model(&model.Interv{}).Where("net_id = ?", netid).Updates(info).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}

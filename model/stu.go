@@ -10,10 +10,10 @@ type Stu struct {
 	WhereKnow string     `gorm:"column:whereknow;not null;comment:'在哪里知道的'"`
 	Mastered  string     `gorm:"column:mastered;not null;comment:'已经会的技能'"`
 	ToMaster  string     `gorm:"column:tomaster;not null;comment:'想要掌握的技能'"`
-	First     Department `gorm:"column:first;enum('tech','video','art');not null;comment:'第一意向'"`
-	Second    Department `gorm:"column:second;enum('tech','video','art');not null;comment:'第二意向'"`
-	Interview Interv     `gorm:"foreignKey:NetID;references:NetID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;comment:'面试信息'"`
-	Message   int        `gorm:"column:messager;not null;default:0;comment:'消息'"`
+	First     Department `gorm:"column:first;type:enum('tech','video','art');not null;comment:'第一意向'"`
+	Second    Department `gorm:"column:second;type:enum('tech','video','art');not null;comment:'第二意向'"`
+	Interv    *Interv    `gorm:"foreignKey:NetID;references:NetID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;comment:'面试信息'"`
+	Message   int        `gorm:"column:message;not null;default:0;comment:'消息'"`
 }
 
 // Message 定义为

@@ -11,7 +11,7 @@ import (
 
 func CheckRole(min int) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userSession := controller.SessionGet(c, "admin-session")
+		userSession := controller.SessionGet(c, "user-session")
 		if userSession == nil {
 			c.Error(common.ErrNew(errors.New("您未登录"), common.AuthErr))
 			c.Abort()

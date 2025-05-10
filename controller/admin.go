@@ -31,7 +31,7 @@ func (*Admin) Login(c *gin.Context) {
 		return
 	}
 	// 设置session
-	SessionSet(c, "admin-session", UserSession{
+	SessionSet(c, "user-session", UserSession{
 		ID:       NetID(data.NetID),
 		Username: data.Name,
 		Level:    Level(data.Level),
@@ -42,22 +42,22 @@ func (*Admin) Login(c *gin.Context) {
 // 管理员的注销
 func (*Admin) Logout(c *gin.Context) {
 	// 检查是否未登录
-	session := SessionGet(c, "admin-session")
+	session := SessionGet(c, "user-session")
 	if session == nil {
 		c.Error(common.ErrNew(errors.New("未登录"), common.OpErr))
 		return
 	}
 	// 注销登录
-	SessionDelete(c, "admin-session")
+	SessionDelete(c, "user-session")
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
 // 管理员的登录状态
 func (*Admin) LogStatus(c *gin.Context) {
 	// 获取session
-	session := SessionGet(c, "admin-session")
+	session := SessionGet(c, "user-session")
 	if session == nil {
-		c.JSON(http.StatusOK, ResponseNew(c, nil))
+		c.JSON(http.StatusOK, ResponseNew(c, "未登录"))
 		return
 	}
 	// 响应
@@ -72,7 +72,7 @@ func (*Admin) Update(c *gin.Context) {
 		Name     string `json:"name" binding:"omitempty"`
 		Password string `json:"password" binding:"omitempty"`
 	}
-	if err := c.ShouldBindJSON(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
@@ -93,7 +93,7 @@ func (*Admin) GetStu(c *gin.Context) {
 		return
 	}
 	// 获取学生信息
-	data, err := srv.Admin.GetStu(info)
+	data, err := srv.Admin.GetStu(Struct2Map(info))
 	if err != nil {
 		c.Error(err)
 		return
@@ -110,7 +110,7 @@ func (*Admin) UpdateStu(c *gin.Context) {
 		return
 	}
 	// 更新学生信息
-	if err := srv.Admin.UpdateStu(info); err != nil {
+	if err := srv.Admin.UpdateStu(Struct2Map(info)); err != nil {
 		c.Error(err)
 		return
 	}
