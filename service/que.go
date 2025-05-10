@@ -26,7 +26,7 @@ func (*Que) Get(que string, department model.Department, url string, pager commo
 		db = db.Where("url LIKE ?", "%"+url+"%")
 	}
 	// 执行分页查询并获取结果
-	if err := db.Offset((pager.Page - 1) * pager.Limit).Limit(pager.Limit).Find(&data).Error; err != nil {
+	if err := db.Omit("created_at", "updated_at", "deleted_at").Offset((pager.Page - 1) * pager.Limit).Limit(pager.Limit).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取问题失败：%v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
