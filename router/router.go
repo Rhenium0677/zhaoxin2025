@@ -30,6 +30,7 @@ func InitRouter(r *gin.Engine) {
 			stuRouter.GET("", ctr.Stu.LogStatus)
 			stuRouter.DELETE("", ctr.Stu.Logout)
 			stuRouter.PUT("", ctr.Stu.Update)
+			stuRouter.PUT("/sub", ctr.Stu.UpdateMessage)
 		}
 		intervRouter := apiRouter.Group("/interv")
 		{

@@ -42,3 +42,13 @@ func (*Stu) Update(info map[string]interface{}) error {
 	// 更新成功
 	return nil
 }
+
+func (*Stu) UpdateMessage(netid string, message int) error {
+	// 更新订阅消息设置
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).Update("message", message).Error; err != nil {
+		logger.DatabaseLogger.Errorf("更新订阅消息设置失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	// 更新成功
+	return nil
+}
