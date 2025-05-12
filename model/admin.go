@@ -13,6 +13,7 @@ const (
 	Tech  Department = "tech"
 	Video Department = "video"
 	Art   Department = "art"
+	None  Department = "none"
 )
 
 type Admin struct {

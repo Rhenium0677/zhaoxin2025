@@ -6,4 +6,5 @@ type Que struct {
 	Department Department `gorm:"column:department;enum:('tech','video','art');not null;comment:'所属部门'"`
 	Url        string     `gorm:"column:url;not null;comment:'问题链接'"`
 	Times      int        `gorm:"column:times;not null;default:0;comment:'抽取到的次数'"`
+	// 硬件随机抽取
 }

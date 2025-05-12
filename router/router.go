@@ -38,6 +38,7 @@ func InitRouter(r *gin.Engine) {
 			intervRouter.POST("", ctr.Interv.New)
 			intervRouter.DELETE("", ctr.Interv.Delete)
 			intervRouter.PUT("", ctr.Interv.Update)
+			intervRouter.PUT("/block", ctr.Interv.BlockAndRecover)
 		}
 		queRouter := apiRouter.Group("/que")
 		{

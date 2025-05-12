@@ -17,20 +17,20 @@ func (*Admin) Login(netid string, password string) (model.Admin, error) {
 	if err := model.DB.Where("netid = ?", netid).First(&admin).Error; err != nil {
 		return model.Admin{}, common.ErrNew(err, common.OpErr)
 	}
-	// 解密密码
-	nosecret, err := Decrypt(admin.Password)
+	// 加密传入的密码
+	encrpted, err := Encrypt(password)
 	if err != nil {
 		return model.Admin{}, common.ErrNew(err, common.SysErr)
 	}
 	// 检查密码是否正确
-	if nosecret != password {
+	if encrpted != admin.Password {
 		return model.Admin{}, common.ErrNew(errors.New("用户名或密码错误"), common.OpErr)
 	}
 	return admin, nil
 }
 
 func (*Admin) Update(netid string, name string, password string) error {
-	info := map[string]interface{}{
+	info := map[string]any{
 		"name":     name,
 		"password": password,
 	}
@@ -44,7 +44,7 @@ func (*Admin) Update(netid string, name string, password string) error {
 		return common.ErrNew(errors.New("管理员不存在"), common.OpErr)
 	}
 	// 更新管理员信息
-	if err := model.DB.Model(&model.Admin{}).Where("netid = ?", netid).Updates(info).Error; err != nil {
+	if err := model.DB.Model(&model.Admin{}).Where("netid = ?", netid).Updates(&info).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新管理员信息失败：%v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
@@ -52,22 +52,12 @@ func (*Admin) Update(netid string, name string, password string) error {
 }
 
 // 筛选并获取学生信息
-func (*Admin) GetStu(info map[string]interface{}) ([]model.Stu, error) {
+func (*Admin) GetStu(stuInfo model.Stu, intervInfo model.Interv) ([]model.Stu, error) {
 	var data []model.Stu
-	db := model.DB.Model(&model.Stu{}).Where(&info)
-	// 将interv相关信息提取出来
-	intervInfo := make(map[string]interface{})
-	for _, key := range []string{"interviewer", "star", "pass"} {
-		if value, ok := info[key]; ok {
-			intervInfo[key] = value
-		}
-	}
-	if len(intervInfo) > 0 {
+	db := model.DB.Model(&model.Stu{}).Where(&stuInfo)
+	if intervInfo.Evaluation != "" {
 		// 关联查询
-		db = db.Joins("JOIN intervs ON stus.netid = intervs.netid")
-		for key, value := range intervInfo {
-			db = db.Where("intervs."+key+" = ?", value)
-		}
+		db = db.Joins("JOIN intervs ON stus.netid = intervs.netid").Where(&intervInfo)
 	}
 	if err := db.Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)
@@ -77,32 +67,24 @@ func (*Admin) GetStu(info map[string]interface{}) ([]model.Stu, error) {
 }
 
 // 更新一个学生信息
-func (*Admin) UpdateStu(info map[string]interface{}) error {
-	netid := info["netid"].(string)
+func (*Admin) UpdateStu(stuInfo model.Stu, intervInfo model.Interv) error {
 	// 检查学生是否存在
-	var count int64
-	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).Count(&count).Error; err != nil {
+	var existed model.Stu
+	if err := model.DB.Model(&model.Stu{}).Where("id = ?", stuInfo.ID).First(&existed).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("学生不存在"), common.NotFoundErr)
+		}
 		logger.DatabaseLogger.Errorf("检查学生是否存在失败：%v", err)
 		return common.ErrNew(err, common.SysErr)
-	}
-	if count == 0 {
-		return common.ErrNew(errors.New("学生不存在"), common.OpErr)
-	}
-	// 将interv相关信息提取出来以map的形式存储
-	intervInfo := make(map[string]interface{})
-	for _, key := range []string{"interviewer", "evaluation", "star", "pass"} {
-		if value, ok := info[key]; ok {
-			intervInfo[key] = value
-		}
 	}
 	return model.DB.Transaction(func(tx *gorm.DB) error {
 		// 使用事务确保操作的原子性
 		// 分别更新学生信息和面试信息
-		if err := tx.Model(&model.Stu{}).Where("netid = ?", netid).Updates(info).Error; err != nil {
+		if err := tx.Model(&model.Stu{}).Where("id = ?", stuInfo.ID).Updates(stuInfo).Error; err != nil {
 			logger.DatabaseLogger.Errorf("更新学生信息失败：%v", err)
 			return common.ErrNew(err, common.SysErr)
 		}
-		if err := tx.Model(&model.Interv{}).Where("netid = ?", netid).Updates(intervInfo).Error; err != nil {
+		if err := tx.Model(&model.Interv{}).Where("id = ?", stuInfo.ID).Updates(intervInfo).Error; err != nil {
 			logger.DatabaseLogger.Errorf("更新学生面试信息失败：%v", err)
 			return common.ErrNew(err, common.SysErr)
 		}

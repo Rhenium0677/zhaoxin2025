@@ -5,6 +5,8 @@ import (
 	"zhaoxin2025/common"
 	"zhaoxin2025/logger"
 	"zhaoxin2025/model"
+
+	"gorm.io/gorm"
 )
 
 // Stu 定义了学生相关的服务操作
@@ -15,9 +17,20 @@ type Stu struct{}
 func (*Stu) Login(netid string, code string) (string, error) {
 	// 调用微信登录接口获取用户信息
 	_, openid, _ := WxLogin(code) // 假设 WxLogin 是一个存在的函数
+	if openid == "" {
+		//
+		//
+		return "", common.ErrNew(errors.New("获取openid失败"), common.AuthErr)
+	}
 	var info model.Stu
+
+	//
+	//
 	// 根据netid查询学生信息，如果不存在则创建该学生记录
-	if err := model.DB.Where("netid = ?", netid).FirstOrCreate(&info).Error; err != nil {
+	if err := model.DB.Where("netid = ?", netid).First(&info).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", common.ErrNew(errors.New("没找到"), common.NotFoundErr)
+		}
 		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return "", common.ErrNew(err, common.SysErr)
 	}
@@ -31,11 +44,11 @@ func (*Stu) Login(netid string, code string) (string, error) {
 
 // Update 更新学生信息
 // 根据传入的netid，更新学生表中的对应记录
-func (*Stu) Update(info map[string]interface{}) error {
+func (*Stu) Update(info map[string]any) error {
 	// 从传入的map中获取netid
 	netid := info["netid"].(string)
 	// 根据netid更新学生信息
-	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).Updates(info).Error; err != nil {
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).Updates(&info).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新学生信息失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
@@ -52,3 +65,5 @@ func (*Stu) UpdateMessage(netid string, message int) error {
 	// 更新成功
 	return nil
 }
+
+// 钩子函数after update updated_at更新

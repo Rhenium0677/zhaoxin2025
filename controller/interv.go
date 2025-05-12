@@ -1,12 +1,15 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
+	"zhaoxin2025/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 )
 
 type Interv struct{}
@@ -18,7 +21,7 @@ func (*Interv) Get(c *gin.Context) {
 		ID          int              `form:"id" binding:"omitempty"`
 		Department  model.Department `form:"department,omitempty"`
 		Interviewer string           `form:"interviewer,omitempty"`
-		Pass        string           `form:"pass" binding:"omitempty,oneof=true false"`
+		Pass        bool             `form:"pass" binding:"omitempty"`
 		Date        time.Time        `form:"date" binding:"omitempty"`
 		common.PagerForm
 	}
@@ -40,14 +43,19 @@ func (*Interv) Get(c *gin.Context) {
 func (*Interv) New(c *gin.Context) {
 	// 绑定请求体
 	var info struct {
-		Times []time.Time `json:"times" binding:"required"`
+		TimeRange service.TimeRange `json:"timerange" binding:"required"`
+		Interval  int               `json:"interval" binding:"required"`
+		// 以分钟为单位计算
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	if info.TimeRange.Start.Add(time.Duration(info.Interval) * time.Minute).After(info.TimeRange.End) {
+		c.Error(common.ErrNew(errors.New("时间范围不够一个间隔"), common.ParamErr))
+	}
 	// 创建面试时间
-	data, err := srv.Interv.New(info.Times)
+	data, err := srv.Interv.New(info.TimeRange, info.Interval)
 	if err != nil {
 		c.Error(err)
 		return
@@ -67,14 +75,19 @@ func (*Interv) Update(c *gin.Context) {
 		Department  model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
 		Star        int              `json:"star" binding:"omitempty"`
 		Evaluation  string           `json:"evaluation" binding:"omitempty"`
-		Pass        string           `json:"pass" binding:"omitempty,oneof=true false"`
+		Pass        bool             `json:"pass" binding:"omitempty"`
 	}
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	var interv model.Interv
+	if err := copier.Copy(&interv, &info); err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
 	// 更新面试记录
-	if err := srv.Interv.Update(Struct2Map(info)); err != nil {
+	if err := srv.Interv.Update(interv); err != nil {
 		c.Error(err)
 		return
 	}
@@ -93,11 +106,28 @@ func (*Interv) Delete(c *gin.Context) {
 		return
 	}
 	// 删除面试记录
-	data, err := srv.Interv.Delete(info.ID)
+	err := srv.Interv.Delete(info.ID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
-	// 返回删除失败的ID
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, nil)
+}
+
+func (*Interv) BlockAndRecover(c *gin.Context) {
+	var info struct {
+		service.TimeRange `json:"timerange" binding:"required"`
+		Block             bool `json:"block" binding:"required"`
+	}
+	if err := c.ShouldBind(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	// 调用服务层获取数据
+	err := srv.Interv.BlockAndRecover(info.TimeRange, info.Block)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }

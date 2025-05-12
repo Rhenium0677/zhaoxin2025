@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 	"zhaoxin2025/common"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +29,7 @@ func (*Stu) Login(c *gin.Context) {
 	}
 	// 登录成功，设置用户session
 	SessionSet(c, "user-session", UserSession{
-		ID:       NetID(info.NetID),
+		ID:       info.NetID,
 		Username: openid,
 		Level:    1, // 学生level默认为1
 	})
@@ -45,7 +44,7 @@ func (*Stu) LogStatus(c *gin.Context) {
 	session := SessionGet(c, "user-session")
 	// 如果session不存在，则表示未登录
 	if session == nil {
-		c.Error(common.ErrNew(nil, common.AuthErr))
+		c.JSON(http.StatusOK, ResponseNew(c, "未登录"))
 		return
 	}
 	// 返回session信息
@@ -96,9 +95,9 @@ func (*Stu) Update(c *gin.Context) {
 // 根据传入的订阅选项（字符串"true"或"false"）计算一个整数掩码，并更新学生的消息设置
 func (*Stu) UpdateMessage(c *gin.Context) {
 	var info struct {
-		Subscribe  string `json:"subscribe" binding:"required,oneof=true false"`
-		IntervTime string `json:"intervtime" binding:"required,oneof=true false"`
-		IntervRes  string `json:"intervres" binding:"required,oneof=true false"`
+		Subscribe  bool `json:"subscribe" binding:"required"`
+		IntervTime bool `json:"intervtime" binding:"required"`
+		IntervRes  bool `json:"intervres" binding:"required"`
 	}
 	// 绑定并验证请求体中的JSON数据
 	if err := c.ShouldBind(&info); err != nil {
@@ -108,16 +107,16 @@ func (*Stu) UpdateMessage(c *gin.Context) {
 	// 从Gin上下文中获取用户session
 	session := SessionGet(c, "user-session").(UserSession)
 	// 将session中的用户ID转换为字符串netid
-	netid := strconv.Itoa(session.ID)
+	netid := session.ID
 	var message int = 0 // 初始化消息掩码
 	// 根据订阅状态设置掩码位
-	if info.Subscribe == "true" {
+	if info.Subscribe == true {
 		message += 1 // 对应二进制 ...001
 	}
-	if info.IntervTime == "true" {
+	if info.IntervTime == true {
 		message += 2 // 对应二进制 ...010
 	}
-	if info.IntervRes == "true" {
+	if info.IntervRes == true {
 		message += 4 // 对应二进制 ...100
 	}
 	// 调用服务层更新学生的消息订阅状态

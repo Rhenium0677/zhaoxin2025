@@ -3,10 +3,12 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 )
 
 type Admin struct{}
@@ -31,7 +33,7 @@ func (*Admin) Login(c *gin.Context) {
 	}
 	// 设置session
 	SessionSet(c, "user-session", UserSession{
-		ID:       NetID(data.NetID),
+		ID:       data.NetID,
 		Username: data.Name,
 		Level:    Level(data.Level),
 	})
@@ -68,8 +70,8 @@ func (*Admin) LogStatus(c *gin.Context) {
 func (*Admin) Update(c *gin.Context) {
 	var info struct {
 		NetID    string `json:"netid" binding:"required,len=10,numeric"`
-		Name     string `json:"name" binding:"omitempty"`
-		Password string `json:"password" binding:"omitempty"`
+		Name     string `json:"name" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
@@ -101,8 +103,18 @@ func (*Admin) GetStu(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	var stu model.Stu
+	if err := copier.Copy(&stu, &info); err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
+	var interv model.Interv
+	if err := copier.Copy(&interv, &info); err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
 	// 获取学生信息
-	data, err := srv.Admin.GetStu(Struct2Map(info))
+	data, err := srv.Admin.GetStu(stu, interv)
 	if err != nil {
 		c.Error(err)
 		return
@@ -114,27 +126,37 @@ func (*Admin) GetStu(c *gin.Context) {
 // 更新一个学生信息
 func (*Admin) UpdateStu(c *gin.Context) {
 	var info struct {
-		NetID    string           `json:"netid" binding:"required,len=10,numeric"`
-		Name     string           `json:"name" binding:"omitempty"`
-		Phone    string           `json:"phone" binding:"omitempty"`
-		School   string           `json:"school" binding:"omitempty"`
-		Mastered string           `json:"mastered" binding:"omitempty"`
-		ToMaster string           `json:"tomaster" binding:"omitempty"`
-		First    model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
-		Second   model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
-		// QueID       int              `json:"que_id" binding:"omitempty,numeric"`
-		// QueTime     time.Time        `json:"que_time" binding:"omitempty"`
-		Pass        string `json:"pass" binding:"omitempty, oneof=true false"`
-		Interviewer string `json:"interviewer" binding:"omitempty"`
-		Evaluation  string `json:"evaluation" binding:"omitempty"`
-		Star        int    `json:"star" binding:"omitempty"`
+		NetID       string           `json:"netid" binding:"required,len=10,numeric"`
+		Name        string           `json:"name" binding:"omitempty"`
+		Phone       string           `json:"phone" binding:"omitempty"`
+		School      string           `json:"school" binding:"omitempty"`
+		Mastered    string           `json:"mastered" binding:"omitempty"`
+		ToMaster    string           `json:"tomaster" binding:"omitempty"`
+		First       model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
+		Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
+		QueID       int              `json:"que_id" binding:"omitempty,numeric"`
+		QueTime     time.Time        `json:"que_time" binding:"omitempty"`
+		Pass        bool             `json:"pass" binding:"omitempty"`
+		Interviewer string           `json:"interviewer" binding:"omitempty"`
+		Evaluation  string           `json:"evaluation" binding:"omitempty"`
+		Star        int              `json:"star" binding:"omitempty"`
 	}
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	var stu model.Stu
+	if err := copier.Copy(&stu, &info); err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
+	var interv model.Interv
+	if err := copier.Copy(&interv, &info); err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
 	// 更新学生信息
-	if err := srv.Admin.UpdateStu(Struct2Map(info)); err != nil {
+	if err := srv.Admin.UpdateStu(stu, interv); err != nil {
 		c.Error(err)
 		return
 	}
@@ -164,7 +186,7 @@ func (*Admin) Register(c *gin.Context) {
 	}
 	// 设置session
 	SessionSet(c, "user-session", UserSession{
-		ID:       NetID(info.NetID),
+		ID:       info.NetID,
 		Username: info.Name,
 		Level:    Level(info.Level),
 	})

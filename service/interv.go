@@ -13,7 +13,7 @@ import (
 type Interv struct{}
 
 // Get 按条件查询面试记录，支持分页
-func (*Interv) Get(info map[string]interface{}) ([]model.Interv, error) {
+func (*Interv) Get(info map[string]any) ([]model.Interv, error) {
 	var data []model.Interv
 	db := model.DB.Model(&model.Interv{}).Where(info)
 
@@ -25,92 +25,91 @@ func (*Interv) Get(info map[string]interface{}) ([]model.Interv, error) {
 	}
 
 	// 执行分页查询
-	page := info["page"].(int)
-	limit := info["limit"].(int)
+	page, ok := info["page"].(int)
+	if !ok {
+		return nil, common.ErrNew(errors.New("分页参数错误"), common.ParamErr)
+	}
+	limit, ok := info["limit"].(int)
+	if !ok {
+		return nil, common.ErrNew(errors.New("分页参数错误"), common.ParamErr)
+	}
+
 	if err := db.Offset((page - 1) * limit).Limit(limit).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
-
-	// 检查是否有查询结果
-	if len(data) == 0 {
-		return nil, common.ErrNew(errors.New("没有查询到面试记录"), common.OpErr)
-	}
 	return data, nil
 }
 
-// New 创建新的面试时间记录，返回冲突的时间列表
-func (*Interv) New(info []time.Time) ([]time.Time, error) {
-	var conflict []time.Time
-	for _, v := range info {
-		newInterv := model.Interv{
-			Time: v,
-		}
-		var count int64
-		// 检查时间是否已存在
-		if err := model.DB.Model(&model.Interv{}).Where("time = ?", v).Count(&count).Error; err != nil {
-			logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
-			return nil, common.ErrNew(err, common.SysErr)
-		}
-		// 如果时间冲突，记录并跳过
-		if count > 0 {
-			conflict = append(conflict, v)
-			continue
-		}
-		// 创建新的面试记录
-		if err := model.DB.Model(&model.Interv{}).Create(&newInterv).Error; err != nil {
-			logger.DatabaseLogger.Errorf("创建面试记录失败: %v", err)
-			return nil, common.ErrNew(err, common.SysErr)
-		}
+// New 创建新的面试时间记录
+func (*Interv) New(info TimeRange, interval int) ([]time.Time, error) {
+	var conflict []model.Interv
+	if err := model.DB.Where("time BETWEEN ? AND ?", info.Start, info.End).Find(&conflict).Error; err != nil {
+		logger.DatabaseLogger.Errorf("查询冲突面试记录失败: %v", err)
+		return nil, common.ErrNew(err, common.SysErr)
 	}
-	return conflict, nil
+	if conflict != nil { // 如果有冲突，返回冲突的时间
+		var conflictTimes []time.Time
+		for _, record := range conflict {
+			conflictTimes = append(conflictTimes, record.Time)
+		}
+		// 返回冲突的时间
+		return conflictTimes, common.ErrNew(errors.New("冲突面试记录"), common.ConflictErr)
+	}
+
+	// 没有冲突，创建新的面试时间
+	var intervs []model.Interv
+	for t := info.Start; t.Before(info.End); t = t.Add(time.Duration(interval) * time.Minute) {
+		intervs = append(intervs, model.Interv{
+			Time: t,
+		})
+	}
+	if err := model.DB.Create(&intervs).Error; err != nil {
+		logger.DatabaseLogger.Errorf("创建面试时间失败: %v", err)
+		return nil, common.ErrNew(err, common.SysErr)
+	}
+	return nil, nil
 }
 
 // Update 更新面试记录信息
-func (*Interv) Update(info map[string]interface{}) error {
-	netid := info["netid"].(string)
-	var count int64
+func (*Interv) Update(info model.Interv) error {
+	var existed model.Interv
 	// 检查要更新的记录是否存在
-	if err := model.DB.Model(&model.Interv{}).Where("net_id = ?", netid).Count(&count).Error; err != nil {
+	if err := model.DB.Model(&model.Interv{}).Where("netid = ?", info.ID).First(&existed).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := model.DB.Model(&model.Interv{}).Where("netid = ?", info.ID).Updates(&info).Error; err != nil {
+				logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
+				return common.ErrNew(err, common.SysErr)
+			}
+			return nil
+		}
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
-	if count == 0 {
-		return common.ErrNew(errors.New("面试记录不存在"), common.OpErr)
-	}
-	// // 执行更新操作
-	if err := model.DB.Model(&model.Interv{}).Where("net_id = ?", netid).Updates(info).Error; err != nil {
-		logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
+	return common.ErrNew(errors.New("记录不存在"), common.NotFoundErr)
+}
+
+// Delete 批量删除面试记录
+func (*Interv) Delete(info []int) error {
+	if err := model.DB.Where("id in ?", info).Delete(&model.Interv{}).Error; err != nil {
+		logger.DatabaseLogger.Errorf("删除面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
+	// 返回删除失败的ID列表和可能的错误
 	return nil
 }
 
-// Delete 批量删除面试记录，使用事务确保操作的原子性
-func (*Interv) Delete(info []int) ([]int, error) {
-	var fail []int
-	// 使用事务进行批量删除
-	err := model.DB.Transaction(func(tx *gorm.DB) error {
-		for _, id := range info {
-			var count int64
-			// 检查记录是否存在
-			if err := tx.Model(&model.Interv{}).Where("id = ?", id).Count(&count).Error; err != nil {
-				logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
-				return common.ErrNew(err, common.SysErr)
-			}
-			// 记录不存在，加入失败列表但继续处理其他ID
-			if count == 0 {
-				fail = append(fail, id)
-				continue
-			}
-			// 执行删除操作
-			if err := tx.Delete(&model.Interv{}, id).Error; err != nil {
-				logger.DatabaseLogger.Errorf("删除面试记录失败 (ID=%d): %v", id, err)
-				return common.ErrNew(err, common.SysErr)
-			}
+func (*Interv) BlockAndRecover(timeRange TimeRange, block bool) error {
+	if block {
+		if err := model.DB.Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Delete(&model.Interv{}).Error; err != nil {
+			logger.DatabaseLogger.Errorf("禁止面试失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
 		}
-		return nil
-	})
-	// 返回删除失败的ID列表和可能的错误
-	return fail, err
+	} else {
+		if err := model.DB.Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Update("deleted_at", nil).Error; err != nil {
+			logger.DatabaseLogger.Errorf("恢复面试失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+	}
+	return nil
 }

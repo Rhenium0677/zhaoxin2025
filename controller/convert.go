@@ -35,8 +35,8 @@ func Level(level model.AdminLevel) int {
 // MapStruct 将结构体中的非零值字段转换为 map
 // 支持处理嵌套结构体、指针、时间类型等
 // 使用 json 标签作为 map 的键名
-func Struct2Map(obj interface{}) map[string]interface{} {
-	result := make(map[string]interface{})
+func Struct2Map(obj any) map[string]any {
+	result := make(map[string]any)
 	if obj == nil {
 		return result
 	}

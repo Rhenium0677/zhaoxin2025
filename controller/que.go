@@ -6,6 +6,7 @@ import (
 	"zhaoxin2025/model"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 )
 
 type Que struct{}
@@ -49,15 +50,17 @@ func (*Que) New(c *gin.Context) {
 	}
 	// 将问题列表转换为 []model.Que 格式
 	// 以便于数据库操作
-	var queInfo []model.Que
-	for _, que := range info.List {
-		queInfo = append(queInfo, model.Que{
-			Question:   que.Question,
-			Department: que.Department,
-			Url:        que.Url,
-		})
+	var ques []model.Que
+	for _, queInfo := range info.List {
+		var que model.Que
+		err := copier.Copy(&que, &queInfo)
+		if err != nil {
+			c.Error(common.ErrNew(err, common.SysErr))
+			return
+		}
+		ques = append(ques, que)
 	}
-	err := srv.Que.New(queInfo)
+	err := srv.Que.New(ques)
 	if err != nil {
 		c.Error(err)
 		return
@@ -97,7 +100,12 @@ func (*Que) Update(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	err := srv.Que.Update(Struct2Map(info))
+	var que model.Que
+	if err := copier.Copy(&que, &info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	err := srv.Que.Update(que)
 	if err != nil {
 		c.Error(err)
 		return
