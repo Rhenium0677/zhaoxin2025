@@ -66,4 +66,14 @@ func (*Stu) UpdateMessage(netid string, message int) error {
 	return nil
 }
 
-// 钩子函数after update updated_at更新
+// GetInterv 查询学生的面试记录
+func (*Stu) GetInterv(netid string) (model.Interv, error) {
+	// 查询学生的面试记录
+	var records model.Interv
+	if err := model.DB.Where("netid = ?", netid).First(&records).Error; err != nil {
+		logger.DatabaseLogger.Errorf("查询学生面试记录失败: %v", err)
+		return model.Interv{}, common.ErrNew(err, common.SysErr)
+	}
+	// 返回查询到的面试记录
+	return records, nil
+}

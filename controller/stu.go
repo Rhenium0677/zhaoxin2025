@@ -110,13 +110,13 @@ func (*Stu) UpdateMessage(c *gin.Context) {
 	netid := session.ID
 	var message int = 0 // 初始化消息掩码
 	// 根据订阅状态设置掩码位
-	if info.Subscribe == true {
+	if info.Subscribe {
 		message += 1 // 对应二进制 ...001
 	}
-	if info.IntervTime == true {
+	if info.IntervTime {
 		message += 2 // 对应二进制 ...010
 	}
-	if info.IntervRes == true {
+	if info.IntervRes {
 		message += 4 // 对应二进制 ...100
 	}
 	// 调用服务层更新学生的消息订阅状态
@@ -126,4 +126,18 @@ func (*Stu) UpdateMessage(c *gin.Context) {
 	}
 	// 返回成功响应 (如果操作成功，通常会返回一个成功的JSON响应)
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
+
+// 查询学生自己的面试记录
+func (*Stu) GetInterv(c *gin.Context) {
+	// 从Gin上下文中获取用户session
+	session := SessionGet(c, "user-session").(UserSession)
+	// 获取学生的面试记录
+	data, err := srv.Stu.GetInterv(session.ID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	// 返回面试记录
+	c.JSON(http.StatusOK, ResponseNew(c, data))
 }
