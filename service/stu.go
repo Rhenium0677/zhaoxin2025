@@ -44,11 +44,9 @@ func (*Stu) Login(netid string, code string) (string, error) {
 
 // Update 更新学生信息
 // 根据传入的netid，更新学生表中的对应记录
-func (*Stu) Update(info map[string]any) error {
-	// 从传入的map中获取netid
-	netid := info["netid"].(string)
+func (*Stu) Update(info model.Stu) error {
 	// 根据netid更新学生信息
-	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).Updates(&info).Error; err != nil {
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", info.NetID).Updates(&info).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新学生信息失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
@@ -76,4 +74,15 @@ func (*Stu) GetInterv(netid string) (model.Interv, error) {
 	}
 	// 返回查询到的面试记录
 	return records, nil
+}
+
+// AppointInterv 更新学生的面试记录
+func (*Stu) AppointInterv(netid string, id int) error {
+	// 更新学生的面试记录
+	if err := model.DB.Model(&model.Interv{}).Where("id = ?", id).Update("netid", netid).Error; err != nil {
+		logger.DatabaseLogger.Errorf("预约面试失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	// 更新成功
+	return nil
 }

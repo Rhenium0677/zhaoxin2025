@@ -2,9 +2,12 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
 	"zhaoxin2025/common"
+	"zhaoxin2025/model"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 )
 
 type Stu struct{}
@@ -82,8 +85,12 @@ func (*Stu) Update(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	// 调用服务层更新学生信息，将结构体转换为map传递
-	if err := srv.Stu.Update(Struct2Map(info)); err != nil {
+	var stu model.Stu
+	if err := copier.Copy(&stu, &info); err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
+	if err := srv.Stu.Update(stu); err != nil {
 		c.Error(err)
 		return
 	}
@@ -140,4 +147,22 @@ func (*Stu) GetInterv(c *gin.Context) {
 	}
 	// 返回面试记录
 	c.JSON(http.StatusOK, ResponseNew(c, data))
+}
+
+// 学生预约面试
+func (*Stu) AppointInterv(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	// 从Gin上下文中获取用户session
+	session := SessionGet(c, "user-session").(UserSession)
+	// 调用服务层预约面试
+	if err := srv.Stu.AppointInterv(session.ID, id); err != nil {
+		c.Error(err)
+		return
+	}
+	// 返回成功响应
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
