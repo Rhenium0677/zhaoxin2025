@@ -49,6 +49,7 @@ func InitRouter(r *gin.Engine) {
 			queRouter.POST("", ctr.Que.New)
 			queRouter.DELETE("", ctr.Que.Delete)
 			queRouter.PUT("", ctr.Que.Update)
+			queRouter.PUT("/lucky", ctr.Que.LuckyDog)
 		}
 	}
 }

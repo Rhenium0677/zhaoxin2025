@@ -112,3 +112,21 @@ func (*Que) Update(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
+
+// 为某个幸运儿指定问题
+func (*Que) LuckyDog(c *gin.Context) {
+	var info struct {
+		NetID string `json:"netid" binding:"required"`
+		QueID int    `json:"queid" binding:"required"`
+	}
+	if err := c.ShouldBind(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	err := srv.Que.LuckyDog(info.NetID, info.QueID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}

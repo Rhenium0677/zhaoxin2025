@@ -21,7 +21,7 @@ func (*Interv) Get(c *gin.Context) {
 		ID          int              `form:"id" binding:"omitempty"`
 		Department  model.Department `form:"department,omitempty"`
 		Interviewer string           `form:"interviewer,omitempty"`
-		Pass        bool             `form:"pass" binding:"omitempty"`
+		Pass        int              `form:"pass" binding:"omitempty,oneof=0 1"`
 		Date        time.Time        `form:"date" binding:"omitempty"`
 		common.PagerForm
 	}
@@ -29,8 +29,13 @@ func (*Interv) Get(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	var interv model.Interv
+	if err := copier.Copy(&interv, &info); err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
 	// 调用服务层获取数据
-	data, err := srv.Interv.Get(Struct2Map(info))
+	data, err := srv.Interv.Get(interv, info.Page, info.Limit)
 	if err != nil {
 		c.Error(err)
 		return
@@ -51,17 +56,24 @@ func (*Interv) New(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	info.TimeRange = service.Localize(info.TimeRange)
 	if info.TimeRange.Start.Add(time.Duration(info.Interval) * time.Minute).After(info.TimeRange.End) {
 		c.Error(common.ErrNew(errors.New("时间范围不够一个间隔"), common.ParamErr))
 	}
 	// 创建面试时间
 	data, err := srv.Interv.New(info.TimeRange, info.Interval)
-	if err != nil {
+	if len(data) > 0 {
+		c.JSON(http.StatusConflict, gin.H{
+			"success": false,
+			"err":     err,
+			"data":    data,
+		})
+		return
+	} else if err != nil {
 		c.Error(err)
 		return
 	}
-	// 返回冲突的时间
-	c.JSON(http.StatusOK, ResponseNew(c, data))
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
 // 更新面试记录
@@ -69,13 +81,15 @@ func (*Interv) New(c *gin.Context) {
 func (*Interv) Update(c *gin.Context) {
 	// 绑定请求体
 	var info struct {
+		ID          int              `json:"id" binding:"required"`
 		NetID       string           `json:"netid" binding:"required,numeric,len=10"`
 		Interviewer string           `json:"interviewer" binding:"omitempty"`
 		Time        time.Time        `json:"time" binding:"omitempty"`
 		Department  model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
 		Star        int              `json:"star" binding:"omitempty"`
 		Evaluation  string           `json:"evaluation" binding:"omitempty"`
-		Pass        bool             `json:"pass" binding:"omitempty"`
+		Pass        int              `json:"pass" binding:"omitempty,oneof=0 1"`
+		QueID       int              `json:"queid" binding:"omitempty"`
 	}
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
@@ -116,15 +130,15 @@ func (*Interv) Delete(c *gin.Context) {
 
 func (*Interv) BlockAndRecover(c *gin.Context) {
 	var info struct {
-		service.TimeRange `json:"timerange" binding:"required"`
-		Block             bool `json:"block" binding:"required"`
+		TimeRange service.TimeRange `json:"timerange" binding:"required"`
+		Block     int               `json:"block" binding:"required,oneof=0 1"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
 	// 调用服务层获取数据
-	err := srv.Interv.BlockAndRecover(info.TimeRange, info.Block)
+	err := srv.Interv.BlockAndRecover(info.TimeRange, info.Block == 1)
 	if err != nil {
 		c.Error(err)
 		return

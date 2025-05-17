@@ -1,9 +1,12 @@
 package service
 
 import (
+	"errors"
 	"zhaoxin2025/common"
 	"zhaoxin2025/logger"
 	"zhaoxin2025/model"
+
+	"gorm.io/gorm"
 )
 
 type Que struct{}
@@ -57,6 +60,25 @@ func (*Que) Delete(ids []int) error {
 func (*Que) Update(info model.Que) error {
 	if err := model.DB.Model(&model.Que{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新问题失败：%v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	return nil
+}
+
+// 指定问题
+// 根据提供的NetID和QueID来给幸运儿指定问题
+func (*Que) LuckyDog(netid string, queid int) error {
+	var record model.Interv
+	if err := model.DB.Where("netid = ?", netid).First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
+		} else {
+			logger.DatabaseLogger.Errorf("查询面试记录失败：%v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+	}
+	if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).Update("queid", queid).Error; err != nil {
+		logger.DatabaseLogger.Errorf("指定问题失败：%v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	return nil

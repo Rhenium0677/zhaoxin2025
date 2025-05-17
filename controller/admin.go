@@ -95,7 +95,7 @@ func (*Admin) GetStu(c *gin.Context) {
 		School      string           `json:"school" binding:"omitempty"`
 		First       model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
 		Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
-		Pass        string           `json:"pass" binding:"omitempty,oneof=true false"`
+		Pass        int              `json:"pass" binding:"omitempty,oneof=0 1"`
 		Interviewer string           `json:"interviewer" binding:"omitempty"`
 		Star        int              `json:"star" binding:"omitempty"`
 	}
@@ -136,7 +136,7 @@ func (*Admin) UpdateStu(c *gin.Context) {
 		Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
 		QueID       int              `json:"que_id" binding:"omitempty,numeric"`
 		QueTime     time.Time        `json:"que_time" binding:"omitempty"`
-		Pass        bool             `json:"pass" binding:"omitempty"`
+		Pass        int              `json:"pass" binding:"omitempty,oneof=0 1"`
 		Interviewer string           `json:"interviewer" binding:"omitempty"`
 		Evaluation  string           `json:"evaluation" binding:"omitempty"`
 		Star        int              `json:"star" binding:"omitempty"`

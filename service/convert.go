@@ -18,3 +18,10 @@ func DayRange(t time.Time) TimeRange {
 		End:   time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, t.Location()),
 	}
 }
+
+func Localize(timerange TimeRange) TimeRange {
+	// 将时间转换为本地时区
+	timerange.Start = timerange.Start.Local()
+	timerange.End = timerange.End.Local()
+	return timerange
+}

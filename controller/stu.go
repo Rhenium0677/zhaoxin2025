@@ -102,9 +102,9 @@ func (*Stu) Update(c *gin.Context) {
 // 根据传入的订阅选项（字符串"true"或"false"）计算一个整数掩码，并更新学生的消息设置
 func (*Stu) UpdateMessage(c *gin.Context) {
 	var info struct {
-		Subscribe  bool `json:"subscribe" binding:"required"`
-		IntervTime bool `json:"intervtime" binding:"required"`
-		IntervRes  bool `json:"intervres" binding:"required"`
+		Subscribe  int `json:"subscribe" binding:"required,oneof=0 1"`
+		IntervTime int `json:"intervtime" binding:"required,oneof=0 1"`
+		IntervRes  int `json:"intervres" binding:"required,oneof=0 1"`
 	}
 	// 绑定并验证请求体中的JSON数据
 	if err := c.ShouldBind(&info); err != nil {
@@ -117,15 +117,9 @@ func (*Stu) UpdateMessage(c *gin.Context) {
 	netid := session.ID
 	var message int = 0 // 初始化消息掩码
 	// 根据订阅状态设置掩码位
-	if info.Subscribe {
-		message += 1 // 对应二进制 ...001
-	}
-	if info.IntervTime {
-		message += 2 // 对应二进制 ...010
-	}
-	if info.IntervRes {
-		message += 4 // 对应二进制 ...100
-	}
+	message |= info.Subscribe << 0
+	message |= info.IntervTime << 1
+	message |= info.IntervRes << 2
 	// 调用服务层更新学生的消息订阅状态
 	if err := srv.Stu.UpdateMessage(netid, message); err != nil {
 		c.Error(err)
