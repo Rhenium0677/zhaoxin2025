@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/logger"
 	"zhaoxin2025/model"
@@ -16,16 +17,14 @@ type Stu struct{}
 // 通过微信code获取openid，查询或创建学生记录，并校验openid
 func (*Stu) Login(netid string, code string) (string, error) {
 	// 调用微信登录接口获取用户信息
-	_, openid, _ := WxLogin(code) // 假设 WxLogin 是一个存在的函数
+	_, openid, err := WxLogin(code)
+	if err != nil {
+		return "", common.ErrNew(err, common.AuthErr)
+	}
 	if openid == "" {
-		//
-		//
 		return "", common.ErrNew(errors.New("获取openid失败"), common.AuthErr)
 	}
 	var info model.Stu
-
-	//
-	//
 	// 根据netid查询学生信息，如果不存在则创建该学生记录
 	if err := model.DB.Where("netid = ?", netid).First(&info).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -67,13 +66,13 @@ func (*Stu) UpdateMessage(netid string, message int) error {
 // GetInterv 查询学生的面试记录
 func (*Stu) GetInterv(netid string) (model.Interv, error) {
 	// 查询学生的面试记录
-	var records model.Interv
-	if err := model.DB.Where("netid = ?", netid).First(&records).Error; err != nil {
+	var data model.Interv
+	if err := model.DB.Where("netid = ?", netid).First(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询学生面试记录失败: %v", err)
 		return model.Interv{}, common.ErrNew(err, common.SysErr)
 	}
 	// 返回查询到的面试记录
-	return records, nil
+	return data, nil
 }
 
 // AppointInterv 更新学生的面试记录
@@ -81,6 +80,37 @@ func (*Stu) AppointInterv(netid string, id int) error {
 	// 更新学生的面试记录
 	if err := model.DB.Model(&model.Interv{}).Where("id = ?", id).Update("netid", netid).Error; err != nil {
 		logger.DatabaseLogger.Errorf("预约面试失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	// 更新成功
+	return nil
+}
+
+// CancelInterv 取消学生的面试预约
+func (*Stu) CancelInterv(netid string, id int) error {
+	// 查询面试记录
+	var record model.Interv
+	if err := model.DB.Where("id = ?", id).First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("没找到"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+
+	// 检查面试记录是否属于该学生
+	if record.NetID == nil || *record.NetID != netid {
+		return common.ErrNew(errors.New("该面试记录不属于该学生"), common.AuthErr)
+	}
+
+	// 检查面试时间是否在半小时内或已经错过
+	if record.Time.Before(time.Now().Add(30*time.Minute)) || record.Time.Before(time.Now()) {
+		return common.ErrNew(errors.New("面试时间在半小时内或已经错过，无法取消预约"), common.AuthErr)
+	}
+
+	// 取消学生的面试预约
+	if err := model.DB.Model(&model.Interv{}).Where("id = ?", id).Update("netid", "").Error; err != nil {
+		logger.DatabaseLogger.Errorf("取消预约面试失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	// 更新成功

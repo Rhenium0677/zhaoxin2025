@@ -166,3 +166,21 @@ func (*Stu) AppointInterv(c *gin.Context) {
 	// 返回成功响应
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
+
+// 学生取消预约面试
+func (*Stu) CancelInterv(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	// 从Gin上下文中获取用户session
+	session := SessionGet(c, "user-session").(UserSession)
+	// 调用服务层取消预约面试
+	if err := srv.Stu.CancelInterv(session.ID, id); err != nil {
+		c.Error(err)
+		return
+	}
+	// 返回成功响应
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
