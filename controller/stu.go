@@ -68,17 +68,20 @@ func (*Stu) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 学生修改信息
+// Update 学生修改信息
 // 接收学生信息并更新数据库中对应记录
 func (*Stu) Update(c *gin.Context) {
 	var info struct {
-		NetID    string `json:"netid" binding:"required,len=10,numeric"`
-		Name     string `json:"name" binding:"required"`
-		Phone    string `json:"phone" binding:"required,len=11,numeric"`
-		Mail     string `json:"mail" binding:"required,email"`
-		School   string `json:"school" binding:"required"`
-		Mastered string `json:"mastered" binding:"required"`
-		ToMaster string `json:"tomaster" binding:"required"`
+		ID       int              `json:"id" binding:"required"`
+		NetID    string           `json:"netid" binding:"required,len=10,numeric"`
+		Name     string           `json:"name" binding:"required"`
+		Phone    string           `json:"phone" binding:"required,len=11,numeric"`
+		Mail     string           `json:"mail" binding:"required,email"`
+		School   string           `json:"school" binding:"required"`
+		Mastered string           `json:"mastered" binding:"required"`
+		ToMaster string           `json:"tomaster" binding:"required"`
+		First    model.Department `json:"first" binding:"required,oneof=tech video art none"`
+		Second   model.Department `json:"second" binding:"required,oneof=tech video art none"`
 	}
 	// 绑定并验证请求参数
 	if err := c.ShouldBind(&info); err != nil {
@@ -98,13 +101,13 @@ func (*Stu) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 更新学生消息订阅状态
+// UpdateMessage 更新学生消息订阅状态
 // 根据传入的订阅选项（字符串"true"或"false"）计算一个整数掩码，并更新学生的消息设置
 func (*Stu) UpdateMessage(c *gin.Context) {
 	var info struct {
-		Subscribe  int `json:"subscribe" binding:"required,oneof=0 1"`
-		IntervTime int `json:"intervtime" binding:"required,oneof=0 1"`
-		IntervRes  int `json:"intervres" binding:"required,oneof=0 1"`
+		Subscribe  int `json:"subscribe" binding:"oneof=0 1"`
+		IntervTime int `json:"intervtime" binding:"oneof=0 1"`
+		IntervRes  int `json:"intervres" binding:"oneof=0 1"`
 	}
 	// 绑定并验证请求体中的JSON数据
 	if err := c.ShouldBind(&info); err != nil {
@@ -115,11 +118,7 @@ func (*Stu) UpdateMessage(c *gin.Context) {
 	session := SessionGet(c, "user-session").(UserSession)
 	// 将session中的用户ID转换为字符串netid
 	netid := session.ID
-	var message int = 0 // 初始化消息掩码
-	// 根据订阅状态设置掩码位
-	message |= info.Subscribe << 0
-	message |= info.IntervTime << 1
-	message |= info.IntervRes << 2
+	message := 1*info.Subscribe + 2*info.IntervTime + 4*info.IntervRes
 	// 调用服务层更新学生的消息订阅状态
 	if err := srv.Stu.UpdateMessage(netid, message); err != nil {
 		c.Error(err)
@@ -129,7 +128,7 @@ func (*Stu) UpdateMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 查询学生自己的面试记录
+// GetInterv 查询学生自己的面试记录
 func (*Stu) GetInterv(c *gin.Context) {
 	// 从Gin上下文中获取用户session
 	session := SessionGet(c, "user-session").(UserSession)
@@ -143,7 +142,7 @@ func (*Stu) GetInterv(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, data))
 }
 
-// 学生预约面试
+// AppointInterv 学生预约面试
 func (*Stu) AppointInterv(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -161,7 +160,7 @@ func (*Stu) AppointInterv(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 学生取消预约面试
+// CancelInterv 学生取消预约面试
 func (*Stu) CancelInterv(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

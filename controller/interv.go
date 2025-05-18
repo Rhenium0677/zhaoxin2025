@@ -41,7 +41,7 @@ func (*Interv) Get(c *gin.Context) {
 		return
 	}
 	// 返回查询结果
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, ResponseNew(c, data))
 }
 
 // 新建面试时间
