@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var AvailableTime = time.Date(2025, time.October, 1, 0, 0, 0, 0, time.Local)
+var AvailableTime = time.Date(2024, time.October, 1, 0, 0, 0, 0, time.Local)
 
 type Admin struct{}
 

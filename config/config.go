@@ -1,9 +1,8 @@
 package config
 
 import (
-	"os"
-
 	_ "github.com/joho/godotenv/autoload"
+	"os"
 )
 
 var Config struct {

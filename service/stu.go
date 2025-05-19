@@ -159,11 +159,11 @@ func CheckFirst(openid string) (bool, error) {
 }
 
 // GetRes 获取学生的面试结果
-func (*Stu) GetRes(netid string) (any, error) {
+func (*Stu) GetRes(netid string) (model.Interv, error) {
 	var data model.Interv
 	if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).First(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询学生面试结果失败: %v", err)
-		return nil, common.ErrNew(err, common.SysErr)
+		return model.Interv{}, common.ErrNew(err, common.SysErr)
 	}
 	return data, nil
 }

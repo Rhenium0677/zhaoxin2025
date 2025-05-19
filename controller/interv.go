@@ -1,8 +1,12 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
@@ -148,5 +152,45 @@ func (*Interv) BlockAndRecover(c *gin.Context) {
 		c.Error(err)
 		return
 	}
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
+
+func (*Interv) QQGroup(c *gin.Context) {
+	var info struct {
+		URL        string           `json:"url" binding:"required,url"`
+		QQGroup    string           `json:"qqgroup" binding:"required,numeric"`
+		Department model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
+	}
+	if err := c.ShouldBind(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	targetDir := "QQGroup"
+	fileName := fmt.Sprintf("%s.json", info.Department)
+	path := filepath.Join(targetDir, fileName)
+	fmt.Printf("尝试在路径 %s 创建文件\n", path)
+
+	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
+	fmt.Printf("目录 %s 已存在或创建成功\n", targetDir)
+
+	file, err := os.Create(path)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "	") // 设置缩进
+	err = encoder.Encode(info)
+	if err != nil {
+		fmt.Println("Error encoding JSON to file:", err)
+		return
+	}
+
+	fmt.Printf("Successfully encoded JSON to %s\n", fileName)
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }

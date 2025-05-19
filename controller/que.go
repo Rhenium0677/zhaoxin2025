@@ -26,12 +26,18 @@ func (*Que) Get(c *gin.Context) {
 		return
 	}
 	// 调用服务层获取问题数据
-	data, err := srv.Que.Get(info.Question, info.Department, info.Url, info.PagerForm)
+	total, data, err := srv.Que.Get(info.Question, info.Department, info.Url, info.PagerForm)
 	if err != nil {
 		c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, ResponseNew(c, data))
+	c.JSON(http.StatusOK, ResponseNew(c, struct {
+		total int64
+		data  []model.Que
+	}{
+		total: total,
+		data:  data,
+	}))
 }
 
 // 新建问题

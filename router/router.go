@@ -40,8 +40,7 @@ func InitRouter(r *gin.Engine) {
 			stuRouter.GET("/interv", ctr.Stu.GetInterv)
 			stuRouter.PUT("/interv:id", ctr.Stu.AppointInterv)
 			stuRouter.DELETE("/interv:id", ctr.Stu.CancelInterv)
-			stuRouter.Use(middleware.CheckTime())
-			stuRouter.GET("/", ctr.Stu.GetRes)
+			stuRouter.GET("/result", ctr.Stu.GetRes, middleware.CheckTime())
 		}
 		intervRouter := apiRouter.Group("/interv")
 		{
@@ -50,6 +49,7 @@ func InitRouter(r *gin.Engine) {
 			intervRouter.DELETE("/", ctr.Interv.Delete)
 			intervRouter.PUT("/", ctr.Interv.Update)
 			intervRouter.PUT("/block", ctr.Interv.BlockAndRecover)
+			intervRouter.PUT("/group", ctr.Interv.QQGroup)
 		}
 		queRouter := apiRouter.Group("/que")
 		{

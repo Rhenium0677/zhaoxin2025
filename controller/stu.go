@@ -1,7 +1,11 @@
 package controller
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
@@ -186,5 +190,39 @@ func (*Stu) GetRes(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, ResponseNew(c, data))
+
+	fileName := fmt.Sprintf("%s.json", data.Department)
+	targetDir := "QQGroup"
+	path := filepath.Join(targetDir, fileName)
+	fmt.Printf("尝试在路径 %s 读取文件\n", path)
+
+	file, err := os.Open(path)
+	if err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
+	defer file.Close()
+
+	var qqGroup struct {
+		URL        string           `json:"url"`
+		QQGroup    string           `json:"qqgroup"`
+		Department model.Department `json:"department"`
+	}
+
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&qqGroup)
+	if err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
+
+	c.JSON(http.StatusOK, ResponseNew(c, struct {
+		Data    model.Interv `json:"data"`
+		URL     string       `json:"url"`
+		QQGroup string       `json:"qqgroup"`
+	}{
+		Data:    data,
+		URL:     qqGroup.URL,
+		QQGroup: qqGroup.QQGroup,
+	}))
 }
