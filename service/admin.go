@@ -92,6 +92,21 @@ func (*Admin) UpdateStu(stuInfo model.Stu, intervInfo model.Interv) error {
 	})
 }
 
+// 获取学生信息并导出为excel
+func (*Admin) Excelize() error {
+	// 获取所有学生信息
+	var data []model.Stu
+	if err := model.DB.Model(&model.Stu{}).Preload("Interv.Que").Find(&data).Error; err != nil {
+		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	// 创建excel文件
+	if err := Excelize(data, "tenzor2025.xlsx"); err != nil {
+		return common.ErrNew(err, common.SysErr)
+	}
+	return nil
+}
+
 // 管理员注册
 func (*Admin) Register(netid string, name string, password string, level model.AdminLevel) error {
 	// 检查管理员是否存在

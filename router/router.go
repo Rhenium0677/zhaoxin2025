@@ -17,10 +17,13 @@ func InitRouter(r *gin.Engine) {
 			adminRouter.POST("/", ctr.Admin.Login)
 			adminRouter.DELETE("/", ctr.Admin.Logout)
 			adminRouter.GET("/", ctr.Admin.LogStatus)
+
 			// adminRouter.Use(middleware.CheckRole(2))
 			adminRouter.PUT("/", ctr.Admin.Update)
 			adminRouter.GET("/stu", ctr.Admin.GetStu)
 			adminRouter.PUT("/stu", ctr.Admin.UpdateStu)
+			adminRouter.GET("/excel", ctr.Admin.Excelize)
+
 			// adminRouter.Use(middleware.CheckRole(3))
 			adminRouter.POST("/register", ctr.Admin.Register)
 		}
@@ -34,7 +37,8 @@ func InitRouter(r *gin.Engine) {
 			stuRouter.PUT("/", ctr.Stu.Update)
 			stuRouter.PUT("/message", ctr.Stu.UpdateMessage)
 			stuRouter.GET("/interv", ctr.Stu.GetInterv)
-			stuRouter.PUT("/interv", ctr.Stu.AppointInterv)
+			stuRouter.PUT("/interv:id", ctr.Stu.AppointInterv)
+			stuRouter.DELETE("/interv:id", ctr.Stu.CancelInterv)
 		}
 		intervRouter := apiRouter.Group("/interv")
 		{

@@ -91,6 +91,19 @@ func (*Stu) GetInterv(netid string) (model.Interv, error) {
 
 // AppointInterv 更新学生的面试记录
 func (*Stu) AppointInterv(netid string, intervid int) error {
+	// 查询面试记录
+	var record model.Interv
+	if err := model.DB.Model(&model.Interv{}).Where("id = ?", intervid).First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("该面试不存在"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	// 检查面试记录是否已经被预约
+	if record.NetID != nil && *record.NetID != "" {
+		return common.ErrNew(errors.New("该面试记录已经被预约"), common.AuthErr)
+	}
 	// 更新学生的面试记录
 	if err := model.DB.Model(&model.Interv{}).Where("id = ?", intervid).Update("netid", netid).Error; err != nil {
 		logger.DatabaseLogger.Errorf("预约面试失败: %v", err)

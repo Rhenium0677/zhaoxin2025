@@ -56,7 +56,6 @@ func (*Interv) New(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	info.TimeRange = service.Localize(info.TimeRange)
 	if info.TimeRange.Start.Add(time.Duration(info.Interval) * time.Minute).After(info.TimeRange.End) {
 		c.Error(common.ErrNew(errors.New("时间范围不够一个间隔"), common.ParamErr))
 	}

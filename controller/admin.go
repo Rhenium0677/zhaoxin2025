@@ -164,6 +164,18 @@ func (*Admin) UpdateStu(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
+// 获取excel
+func (*Admin) Excelize(c *gin.Context) {
+	// 获取学生信息
+	err := srv.Admin.Excelize()
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	// 响应
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
+
 // 权限2
 // 管理员的注册
 func (*Admin) Register(c *gin.Context) {
