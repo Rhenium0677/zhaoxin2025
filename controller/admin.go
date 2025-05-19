@@ -14,7 +14,8 @@ import (
 type Admin struct{}
 
 // 无需权限
-// 管理员的登录
+
+// Login 管理员的登录
 func (*Admin) Login(c *gin.Context) {
 	// 传入数据结构体
 	var info struct {
@@ -40,7 +41,7 @@ func (*Admin) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 管理员的注销
+// Logout 管理员的注销
 func (*Admin) Logout(c *gin.Context) {
 	// 检查是否未登录
 	session := SessionGet(c, "user-session")
@@ -53,7 +54,7 @@ func (*Admin) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 管理员的登录状态
+// LogStatus 管理员的登录状态
 func (*Admin) LogStatus(c *gin.Context) {
 	// 获取session
 	session := SessionGet(c, "user-session")
@@ -66,7 +67,8 @@ func (*Admin) LogStatus(c *gin.Context) {
 }
 
 // 权限1
-// 管理员的更新
+
+// Update 管理员的更新
 func (*Admin) Update(c *gin.Context) {
 	var info struct {
 		NetID    string `json:"netid" binding:"required,len=10,numeric"`
@@ -86,7 +88,7 @@ func (*Admin) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 筛选并获取学生信息
+// GetStu 筛选并获取学生信息
 func (*Admin) GetStu(c *gin.Context) {
 	var info struct {
 		NetID       string           `json:"netid" binding:"omitempty,len=10,numeric"`
@@ -123,7 +125,7 @@ func (*Admin) GetStu(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, data))
 }
 
-// 更新一个学生信息
+// UpdateStu 更新一个学生信息
 func (*Admin) UpdateStu(c *gin.Context) {
 	var info struct {
 		NetID       string           `json:"netid" binding:"required,len=10,numeric"`
@@ -164,7 +166,7 @@ func (*Admin) UpdateStu(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 获取excel
+// Excelize 将学生数据输出成excel
 func (*Admin) Excelize(c *gin.Context) {
 	// 获取学生信息
 	err := srv.Admin.Excelize()
@@ -177,7 +179,8 @@ func (*Admin) Excelize(c *gin.Context) {
 }
 
 // 权限2
-// 管理员的注册
+
+// Register 管理员的注册
 func (*Admin) Register(c *gin.Context) {
 	// 传入数据结构体
 	var info struct {
@@ -203,5 +206,18 @@ func (*Admin) Register(c *gin.Context) {
 		Level:    Level(info.Level),
 	})
 	// 响应
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
+
+// SetTime 设置可查询面试结果的时间
+func (*Admin) SetTime(c *gin.Context) {
+	var info struct {
+		Time time.Time `json:"time" binding:"required"`
+	}
+	if err := c.ShouldBind(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	srv.Admin.SetTime(info.Time)
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }

@@ -13,14 +13,19 @@ import (
 type Interv struct{}
 
 // Get 按条件查询面试记录，支持分页
-func (*Interv) Get(info model.Interv, page int, limit int) ([]model.Interv, error) {
+func (*Interv) Get(info model.Interv, page int, limit int) (int64, []model.Interv, error) {
 	var data []model.Interv
-	db := model.DB.Model(&model.Interv{}).Where(info)
+	var count int64
+	db := model.DB.Model(&model.Interv{}).Where(&info)
+	if err := db.Count(&count).Error; err != nil {
+		logger.DatabaseLogger.Errorf("统计数据总数失败: %v", err)
+		return 0, nil, common.ErrNew(err, common.SysErr)
+	}
 	if err := db.Offset((page - 1) * limit).Limit(limit).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
-		return nil, common.ErrNew(err, common.SysErr)
+		return 0, nil, common.ErrNew(err, common.SysErr)
 	}
-	return data, nil
+	return count, data, nil
 }
 
 // New 创建新的面试时间记录

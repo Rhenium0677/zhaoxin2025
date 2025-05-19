@@ -25,7 +25,7 @@ func (*Stu) Login(netid string, code string) (string, error) {
 	// if openid == "" {
 	// 	return "", common.ErrNew(errors.New("获取openid失败"), common.AuthErr)
 	// }
-	if first, err := CheckFirst(netid); err != nil {
+	if first, err := CheckFirst(openid); err != nil {
 		return "", err
 	} else if first {
 		// 如果是第一次登录，创建学生记录
@@ -144,11 +144,11 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 	return nil
 }
 
-// 检查学生是否第一次登录
-func CheckFirst(netid string) (bool, error) {
+// CheckFirst 检查学生是否第一次登录
+func CheckFirst(openid string) (bool, error) {
 	// 查询学生信息
 	var data model.Stu
-	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&data).Error; err != nil {
+	if err := model.DB.Model(&model.Stu{}).Where("openid = ?", openid).First(&data).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return true, nil // 第一次登录
 		}
@@ -156,4 +156,14 @@ func CheckFirst(netid string) (bool, error) {
 		return false, common.ErrNew(err, common.SysErr)
 	}
 	return false, nil // 不是第一次登录
+}
+
+// GetRes 获取学生的面试结果
+func (*Stu) GetRes(netid string) (any, error) {
+	var data model.Interv
+	if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).First(&data).Error; err != nil {
+		logger.DatabaseLogger.Errorf("查询学生面试结果失败: %v", err)
+		return nil, common.ErrNew(err, common.SysErr)
+	}
+	return data, nil
 }

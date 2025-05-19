@@ -177,3 +177,14 @@ func (*Stu) CancelInterv(c *gin.Context) {
 	// 返回成功响应
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
+
+// GetResult 查询学生面试结果
+func (*Stu) GetRes(c *gin.Context) {
+	session := SessionGet(c, "user-session").(UserSession)
+	data, err := srv.Stu.GetRes(session.ID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, data))
+}

@@ -26,6 +26,7 @@ func InitRouter(r *gin.Engine) {
 
 			// adminRouter.Use(middleware.CheckRole(3))
 			adminRouter.POST("/register", ctr.Admin.Register)
+			adminRouter.POST("/settime", ctr.Admin.SetTime)
 		}
 		stuRouter := apiRouter.Group("/stu")
 		{
@@ -39,6 +40,8 @@ func InitRouter(r *gin.Engine) {
 			stuRouter.GET("/interv", ctr.Stu.GetInterv)
 			stuRouter.PUT("/interv:id", ctr.Stu.AppointInterv)
 			stuRouter.DELETE("/interv:id", ctr.Stu.CancelInterv)
+			stuRouter.Use(middleware.CheckTime())
+			stuRouter.GET("/", ctr.Stu.GetRes)
 		}
 		intervRouter := apiRouter.Group("/interv")
 		{

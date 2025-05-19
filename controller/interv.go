@@ -35,13 +35,19 @@ func (*Interv) Get(c *gin.Context) {
 		return
 	}
 	// 调用服务层获取数据
-	data, err := srv.Interv.Get(interv, info.Page, info.Limit)
+	total, data, err := srv.Interv.Get(interv, info.Page, info.Limit)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 	// 返回查询结果
-	c.JSON(http.StatusOK, ResponseNew(c, data))
+	c.JSON(http.StatusOK, ResponseNew(c, struct {
+		Total int64          `json:"total"`
+		Data  []model.Interv `json:"data"`
+	}{
+		Total: total,
+		Data:  data,
+	}))
 }
 
 // 新建面试时间

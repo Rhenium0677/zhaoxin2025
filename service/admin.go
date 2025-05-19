@@ -2,12 +2,15 @@ package service
 
 import (
 	"errors"
+	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/logger"
 	"zhaoxin2025/model"
 
 	"gorm.io/gorm"
 )
+
+var AvailableTime = time.Date(2025, time.October, 1, 0, 0, 0, 0, time.Local)
 
 type Admin struct{}
 
@@ -92,7 +95,7 @@ func (*Admin) UpdateStu(stuInfo model.Stu, intervInfo model.Interv) error {
 	})
 }
 
-// 获取学生信息并导出为excel
+// Excelize 获取学生信息并导出为excel
 func (*Admin) Excelize() error {
 	// 获取所有学生信息
 	var data []model.Stu
@@ -107,7 +110,7 @@ func (*Admin) Excelize() error {
 	return nil
 }
 
-// 管理员注册
+// Register 管理员注册
 func (*Admin) Register(netid string, name string, password string, level model.AdminLevel) error {
 	// 检查管理员是否存在
 	var count int64
@@ -136,4 +139,9 @@ func (*Admin) Register(netid string, name string, password string, level model.A
 		return common.ErrNew(err, common.SysErr)
 	}
 	return nil
+}
+
+// SetTime 设置可查询面试结果的时间
+func (*Admin) SetTime(time time.Time) {
+	AvailableTime = time
 }

@@ -13,8 +13,9 @@ type Que struct{}
 
 // 获取问题
 // 支持通过问题内容(que)、部门(department)、链接(url)进行筛选，并进行分页(pager)
-func (*Que) Get(que string, department model.Department, url string, pager common.PagerForm) ([]model.Que, error) {
+func (*Que) Get(que string, department model.Department, url string, pager common.PagerForm) (int64, []model.Que, error) {
 	var data []model.Que
+	var count int64
 
 	db := model.DB.Model(&model.Que{}) // 初始化查询构建器，针对 Que 模型
 	// 如果提供了问题内容筛选条件，则添加模糊匹配
@@ -25,15 +26,19 @@ func (*Que) Get(que string, department model.Department, url string, pager commo
 	if department != "" {
 		db = db.Where("department = ?", department)
 	}
+	if err := db.Count(&count).Error; err != nil {
+		logger.DatabaseLogger.Errorf("统计问题数量失败：%v", err)
+		return 0, nil, err
+	}
 	// 执行分页查询并获取结果
 	if err := db.Omit("created_at", "updated_at", "deleted_at").Offset((pager.Page - 1) * pager.Limit).Limit(pager.Limit).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取问题失败：%v", err)
-		return nil, common.ErrNew(err, common.SysErr)
+		return 0, nil, common.ErrNew(err, common.SysErr)
 	}
-	return data, nil
+	return count, data, nil
 }
 
-// 新建问题
+// New 新建问题
 // 批量创建问题记录
 func (*Que) New(list []model.Que) error {
 	if err := model.DB.Model(&model.Que{}).Create(&list).Error; err != nil {
@@ -43,7 +48,7 @@ func (*Que) New(list []model.Que) error {
 	return nil
 }
 
-// 删除问题
+// Delete 删除问题
 // 根据提供的ID列表批量删除问题记录
 func (*Que) Delete(ids []int) error {
 	// 直接使用 GORM 的 Delete 方法，通过主键ID列表删除记录
@@ -55,7 +60,7 @@ func (*Que) Delete(ids []int) error {
 	return nil
 }
 
-// 更新问题
+// Update 更新问题
 // 根据提供的ID和信息更新单个问题记录
 func (*Que) Update(info model.Que) error {
 	if err := model.DB.Model(&model.Que{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
@@ -65,7 +70,7 @@ func (*Que) Update(info model.Que) error {
 	return nil
 }
 
-// 指定问题
+// LuckyDog 指定问题
 // 根据提供的NetID和QueID来给幸运儿指定问题
 func (*Que) LuckyDog(netid string, queid int) error {
 	var record model.Interv
