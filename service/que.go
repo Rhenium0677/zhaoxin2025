@@ -26,6 +26,9 @@ func (*Que) Get(que string, department model.Department, url string, pager commo
 	if department != "" {
 		db = db.Where("department = ?", department)
 	}
+	if url != "" {
+		db = db.Where("url LIKE ?", url)
+	}
 	if err := db.Count(&count).Error; err != nil {
 		logger.DatabaseLogger.Errorf("统计问题数量失败：%v", err)
 		return 0, nil, err
@@ -63,6 +66,15 @@ func (*Que) Delete(ids []int) error {
 // Update 更新问题
 // 根据提供的ID和信息更新单个问题记录
 func (*Que) Update(info model.Que) error {
+	// 使用 GORM 的 Updates 方法更新记录
+	var record model.Que
+	if err := model.DB.Model(&model.Que{}).Where("id = ?", info.ID).First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("该问题不存在"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("查询问题失败：%v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
 	if err := model.DB.Model(&model.Que{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新问题失败：%v", err)
 		return common.ErrNew(err, common.SysErr)

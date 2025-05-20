@@ -54,7 +54,7 @@ func (*Interv) Get(c *gin.Context) {
 	}))
 }
 
-// 新建面试时间
+// New 新建面试时间
 func (*Interv) New(c *gin.Context) {
 	// 绑定请求体
 	var info struct {
@@ -72,11 +72,13 @@ func (*Interv) New(c *gin.Context) {
 	// 创建面试时间
 	data, err := srv.Interv.New(info.TimeRange, info.Interval)
 	if len(data) > 0 {
-		c.JSON(http.StatusConflict, gin.H{
-			"success": false,
-			"err":     err,
-			"data":    data,
-		})
+		c.JSON(http.StatusConflict, ResponseNew(c, struct {
+			Conflict []time.Time `json:"conflict"`
+			Error    error       `json:"error"`
+		}{
+			Conflict: data,
+			Error:    errors.New("有时间冲突的面试记录"),
+		}))
 		return
 	} else if err != nil {
 		c.Error(err)
@@ -122,7 +124,7 @@ func (*Interv) Update(c *gin.Context) {
 func (*Interv) Delete(c *gin.Context) {
 	// 绑定请求体
 	var info struct {
-		ID []int `json:"id" binding:"required"`
+		ID []int `form:"id" binding:"required,min=1,dive,gte=1"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
@@ -134,13 +136,13 @@ func (*Interv) Delete(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, nil)
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
 func (*Interv) BlockAndRecover(c *gin.Context) {
 	var info struct {
 		TimeRange service.TimeRange `json:"timerange" binding:"required"`
-		Block     int               `json:"block" binding:"required,oneof=0 1"`
+		Block     int               `json:"block" binding:"oneof=0 1"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))

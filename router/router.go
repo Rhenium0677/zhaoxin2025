@@ -18,13 +18,13 @@ func InitRouter(r *gin.Engine) {
 			adminRouter.DELETE("/", ctr.Admin.Logout)
 			adminRouter.GET("/", ctr.Admin.LogStatus)
 
-			// adminRouter.Use(middleware.CheckRole(2))
+			adminRouter.Use(middleware.CheckRole(2))
 			adminRouter.PUT("/", ctr.Admin.Update)
 			adminRouter.GET("/stu", ctr.Admin.GetStu)
 			adminRouter.PUT("/stu", ctr.Admin.UpdateStu)
 			adminRouter.GET("/excel", ctr.Admin.Excelize)
 
-			// adminRouter.Use(middleware.CheckRole(3))
+			adminRouter.Use(middleware.CheckRole(3))
 			adminRouter.POST("/register", ctr.Admin.Register)
 			adminRouter.POST("/settime", ctr.Admin.SetTime)
 		}
@@ -44,6 +44,7 @@ func InitRouter(r *gin.Engine) {
 		}
 		intervRouter := apiRouter.Group("/interv")
 		{
+			intervRouter.Use(middleware.CheckRole(2))
 			intervRouter.GET("/", ctr.Interv.Get)
 			intervRouter.POST("/", ctr.Interv.New)
 			intervRouter.DELETE("/", ctr.Interv.Delete)
@@ -55,7 +56,7 @@ func InitRouter(r *gin.Engine) {
 		{
 			queRouter.GET("/", ctr.Que.Get)
 
-			// queRouter.Use(middleware.CheckRole(1))
+			queRouter.Use(middleware.CheckRole(1))
 			queRouter.POST("/", ctr.Que.New)
 			queRouter.DELETE("/", ctr.Que.Delete)
 			queRouter.PUT("/", ctr.Que.Update)

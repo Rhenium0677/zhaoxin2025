@@ -16,7 +16,7 @@ import (
 
 type Stu struct{}
 
-// 学生登录
+// Login 学生登录
 // 接收学生NetID和微信code，进行登录验证并设置session
 func (*Stu) Login(c *gin.Context) {
 	var info struct {

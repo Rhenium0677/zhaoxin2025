@@ -11,7 +11,7 @@ import (
 
 type Que struct{}
 
-// 获取问题
+// Get 获取问题
 // 根据提供的筛选条件（问题内容、部门、URL）和分页信息获取问题列表
 func (*Que) Get(c *gin.Context) {
 	var info struct {
@@ -32,15 +32,15 @@ func (*Que) Get(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, ResponseNew(c, struct {
-		total int64
-		data  []model.Que
+		Total int64
+		Data  []model.Que
 	}{
-		total: total,
-		data:  data,
+		Total: total,
+		Data:  data,
 	}))
 }
 
-// 新建问题
+// New 新建问题
 // 接收问题列表并创建新的问题记录
 func (*Que) New(c *gin.Context) {
 	var info struct {
@@ -48,7 +48,7 @@ func (*Que) New(c *gin.Context) {
 			Question   string           `json:"question" binding:"required"`
 			Department model.Department `json:"department" binding:"required,oneof=tech video art"`
 			Url        string           `json:"url" binding:"omitempty"`
-		} `json:"list" binding:"required,dive"`
+		} `json:"list" binding:"required,min=1,dive"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
@@ -74,11 +74,11 @@ func (*Que) New(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 删除问题
+// Delete 删除问题
 // 根据提供的问题ID列表删除相应的问题记录
 func (*Que) Delete(c *gin.Context) {
 	var info struct {
-		IDs []int `json:"ids" binding:"required,dive,gte=1"`
+		IDs []int `json:"ids" binding:"required,min=1,dive,gte=1"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
@@ -93,7 +93,7 @@ func (*Que) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 更新问题
+// Update 更新问题
 // 根据提供的问题信息更新指定ID的问题记录
 func (*Que) Update(c *gin.Context) {
 	var info struct {
@@ -119,7 +119,7 @@ func (*Que) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 为某个幸运儿指定问题
+// LuckyDog 为某个幸运儿指定问题
 func (*Que) LuckyDog(c *gin.Context) {
 	var info struct {
 		NetID string `json:"netid" binding:"required"`
