@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"math/rand"
 	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/logger"
@@ -88,6 +89,23 @@ func (*Interv) Delete(info []int) error {
 	}
 	// 返回删除失败的ID列表和可能的错误
 	return nil
+}
+
+func (i *Interv) GetQue(department model.Department) (model.Que, error) {
+	var data []model.Que
+	if err := model.DB.Model(&model.Que{}).Where("department = ?", department).Find(&data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.Que{}, common.ErrNew(errors.New("没有找到问题"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("查询问题失败: %v", err)
+		return model.Que{}, common.ErrNew(err, common.SysErr)
+	}
+	if len(data) == 0 {
+		return model.Que{}, common.ErrNew(errors.New("没有找到问题"), common.NotFoundErr)
+	}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	id := r.Intn(len(data))
+	return data[id], nil
 }
 
 func (*Interv) BlockAndRecover(timeRange TimeRange, block bool) error {

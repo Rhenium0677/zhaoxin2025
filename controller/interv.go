@@ -139,6 +139,22 @@ func (*Interv) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
+func (*Interv) GetQue(c *gin.Context) {
+	var info struct {
+		Department model.Department `form:"department" binding:"required,oneof=tech video art"`
+	}
+	if err := c.ShouldBind(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	data, err := srv.Interv.GetQue(info.Department)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, data))
+}
+
 func (*Interv) BlockAndRecover(c *gin.Context) {
 	var info struct {
 		TimeRange service.TimeRange `json:"timerange" binding:"required"`
