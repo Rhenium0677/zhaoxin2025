@@ -24,6 +24,12 @@ func DayRange(t time.Time) TimeRange {
 	}
 }
 
+// Date 接收一个时间参数，返回该天的日期
+// 例如：2023-10-01 00:00:00 返回 "2023-10-01"
+func Date(t time.Time) string {
+	return fmt.Sprintf("%04d-%02d-%02d", t.Year(), t.Month(), t.Day())
+}
+
 // Excelize 将 Product 切片数据导出到 XLSX 文件
 // data: 要导出的 Stu 切片
 // filename: 输出的 XLSX 文件名

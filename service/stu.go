@@ -77,13 +77,30 @@ func (*Stu) UpdateMessage(netid string, message int) error {
 	return nil
 }
 
-// GetInterv 查询学生的面试记录
-func (*Stu) GetInterv(netid string) (model.Interv, error) {
+// GetIntervDate 获取可用的面试日期
+func (*Stu) GetIntervDate() (map[string]int, error) {
+	// 查询可用的面试日期
+	var record []model.Interv
+	if err := model.DB.Model(&model.Interv{}).Where("neid = ?", nil).Find(&record).Error; err != nil {
+		logger.DatabaseLogger.Errorf("查询可用面试日期失败: %v", err)
+		return nil, common.ErrNew(err, common.SysErr)
+	}
+	IntervDate := make(map[string]int)
+	for _, value := range record {
+		IntervDate[Date(value.Time)]++
+	}
+	// 返回可用的面试日期
+	return IntervDate, nil
+}
+
+// GetInterv 查询某日可用与不可用面试记录
+func (*Stu) GetInterv(date time.Time) ([]model.Interv, error) {
 	// 查询学生的面试记录
-	var data model.Interv
-	if err := model.DB.Where("netid = ?", netid).First(&data).Error; err != nil {
+	var data []model.Interv
+	timeRange := DayRange(date)
+	if err := model.DB.Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询学生面试记录失败: %v", err)
-		return model.Interv{}, common.ErrNew(err, common.SysErr)
+		return nil, common.ErrNew(err, common.SysErr)
 	}
 	// 返回查询到的面试记录
 	return data, nil

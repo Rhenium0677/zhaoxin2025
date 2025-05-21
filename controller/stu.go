@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
 
@@ -132,18 +133,49 @@ func (*Stu) UpdateMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// GetInterv 查询学生自己的面试记录
-func (*Stu) GetInterv(c *gin.Context) {
-	// 从Gin上下文中获取用户session
-	session := SessionGet(c, "user-session").(UserSession)
-	// 获取学生的面试记录
-	data, err := srv.Stu.GetInterv(session.ID)
+// GetIntervDate 查询可用的面试日期
+func (*Stu) GetIntervDate(c *gin.Context) {
+	data, err := srv.Stu.GetIntervDate()
 	if err != nil {
 		c.Error(err)
 		return
 	}
-	// 返回面试记录
 	c.JSON(http.StatusOK, ResponseNew(c, data))
+}
+
+// GetInterv 查询某天可用与不可用的面试数量
+func (*Stu) GetInterv(c *gin.Context) {
+	session := SessionGet(c, "user-session").(UserSession)
+	var info struct {
+		Date time.Time `form:"date" binding:"required"`
+	}
+	if err := c.ShouldBind(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	// 获取面试记录
+	data, err := srv.Stu.GetInterv(info.Date)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	var available, unavailable []model.Interv
+	for _, value := range data {
+		if value.NetID != nil && *(value.NetID) != session.ID {
+			unavailable = append(unavailable, value)
+		} else {
+			available = append(available, value)
+		}
+
+	}
+	// 返回面试记录
+	c.JSON(http.StatusOK, ResponseNew(c, struct {
+		Available   []model.Interv `json:"available"`
+		Unavailable []model.Interv `json:"unavailable"`
+	}{
+		Available:   available,
+		Unavailable: unavailable,
+	}))
 }
 
 // AppointInterv 学生预约面试
