@@ -66,7 +66,7 @@ func (*Admin) LogStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, session))
 }
 
-// 权限1
+// 权限2
 
 // Update 管理员的更新
 func (*Admin) Update(c *gin.Context) {
@@ -178,7 +178,19 @@ func (*Admin) Excelize(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
-// 权限2
+// Stat 统计学生信息并输出数据
+func (*Admin) Stat(c *gin.Context) {
+	// 获取统计数据
+	data, err := srv.Admin.Stat()
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	// 响应
+	c.JSON(http.StatusOK, ResponseNew(c, data))
+}
+
+// 权限3
 
 // Register 管理员的注册
 func (*Admin) Register(c *gin.Context) {

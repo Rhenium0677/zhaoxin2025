@@ -110,6 +110,16 @@ func (*Admin) Excelize() error {
 	return nil
 }
 
+// Stat 获取学生信息并统计
+func (*Admin) Stat() (Stat, error) {
+	var data []model.Stu
+	if err := model.DB.Model(&model.Stu{}).Find(&data).Error; err != nil {
+		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)
+		return Stat{}, common.ErrNew(err, common.SysErr)
+	}
+	return GetStat(data), nil
+}
+
 // Register 管理员注册
 func (*Admin) Register(netid string, name string, password string, level model.AdminLevel) error {
 	// 检查管理员是否存在
