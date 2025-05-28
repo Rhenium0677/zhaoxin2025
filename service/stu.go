@@ -15,49 +15,53 @@ type Stu struct{}
 
 // Login 处理学生登录逻辑
 // 通过微信code获取openid，查询或创建学生记录，并校验openid
-func (*Stu) Login(netid string, code string) (string, error) {
+func (*Stu) Login(netid string, code string) (bool, model.Stu, error) {
 	// 调用微信登录接口获取用户信息
 	// _, openid, err := WxLogin(code)
 	openid := "just for test remember to modify these lines"
 	// if err != nil {
-	// 	return "", common.ErrNew(err, common.AuthErr)
+	// 	return false, "", common.ErrNew(err, common.AuthErr)
 	// }
 	// if openid == "" {
-	// 	return "", common.ErrNew(errors.New("获取openid失败"), common.AuthErr)
+	// 	return false, "", common.ErrNew(errors.New("获取openid失败"), common.AuthErr)
 	// }
-	if first, err := CheckFirst(openid); err != nil {
-		return "", err
-	} else if first {
-		// 如果是第一次登录，创建学生记录
-		if err := model.DB.Model(&model.Stu{}).Create(&model.Stu{
-			NetID:  netid,
-			OpenID: openid,
-		}).Error; err != nil {
-			logger.DatabaseLogger.Errorf("创建学生记录失败: %v", err)
-			return "", common.ErrNew(err, common.SysErr)
-		}
-		return openid, nil
-	}
-	var info model.Stu
+	var record model.Stu
 	// 根据netid查询学生信息
-	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&info).Error; err != nil {
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", common.ErrNew(errors.New("没找到"), common.NotFoundErr)
+			// 如果是第一次登录，创建学生记录
+			if err := model.DB.Model(&model.Stu{}).Create(&model.Stu{
+				NetID:  netid,
+				OpenID: openid,
+			}).Error; err != nil {
+				logger.DatabaseLogger.Errorf("创建学生记录失败: %v", err)
+				return true, model.Stu{}, common.ErrNew(err, common.SysErr)
+			}
+			return true, model.Stu{NetID: netid, OpenID: openid}, nil
 		}
 		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
-		return "", common.ErrNew(err, common.SysErr)
+		return false, model.Stu{}, common.ErrNew(err, common.SysErr)
 	}
 	// 校验数据库中存储的openid与本次登录获取的openid是否一致
-	if info.OpenID != openid {
-		return "", common.ErrNew(errors.New("数据库中openid与用code获取到的openid不一致"), common.AuthErr)
+	if record.OpenID != openid {
+		return false, record, common.ErrNew(errors.New("数据库中openid与用code获取到的openid不一致"), common.AuthErr)
 	}
 	// 登录成功，返回openid
-	return openid, nil
+	return false, record, nil
+	//	todo:返回update的信息，判断是否为空不需要checkfirst
 }
 
 // Update 更新学生信息
 // 根据传入的netid，更新学生表中的对应记录
 func (*Stu) Update(info model.Stu) error {
+	var record model.Stu
+	if err := model.DB.Model(&model.Stu{}).Where("id = ?", info.ID).First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("没找到"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
 	// 根据netid更新学生信息
 	if err := model.DB.Model(&model.Stu{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新学生信息失败: %v", err)
@@ -68,6 +72,15 @@ func (*Stu) Update(info model.Stu) error {
 }
 
 func (*Stu) UpdateMessage(netid string, message int) error {
+	var record model.Stu
+	// 查询学生信息
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("没找到"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
 	// 更新订阅消息设置
 	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).Update("message", message).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新订阅消息设置失败: %v", err)
@@ -81,13 +94,13 @@ func (*Stu) UpdateMessage(netid string, message int) error {
 func (*Stu) GetIntervDate() (map[string]int, error) {
 	// 查询可用的面试日期
 	var record []model.Interv
-	if err := model.DB.Model(&model.Interv{}).Where("neid = ?", nil).Find(&record).Error; err != nil {
+	if err := model.DB.Model(&model.Interv{}).Where("netid IS NULL").Find(&record).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询可用面试日期失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
 	IntervDate := make(map[string]int)
-	for _, value := range record {
-		IntervDate[Date(value.Time)]++
+	for _, interv := range record {
+		IntervDate[Date(interv.Time)]++
 	}
 	// 返回可用的面试日期
 	return IntervDate, nil
@@ -117,14 +130,40 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
+	for timeRange, _ := range BlockTable {
+		if record.Time.After(timeRange.Start) && record.Time.Before(timeRange.End) {
+			// 检查是否在不可预约时间段内
+			return common.ErrNew(errors.New("当前面试信息无法修改"), common.AuthErr)
+		}
+	}
 	// 检查面试记录是否已经被预约
 	if record.NetID != nil && *record.NetID != "" {
 		return common.ErrNew(errors.New("该面试记录已经被预约"), common.AuthErr)
 	}
 	// 更新学生的面试记录
-	if err := model.DB.Model(&model.Interv{}).Where("id = ?", intervid).Update("netid", netid).Error; err != nil {
-		logger.DatabaseLogger.Errorf("预约面试失败: %v", err)
+	var stu model.Stu
+	if err := model.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.Interv{}).Where("id = ?", intervid).Update("netid", netid).Error; err != nil {
+			logger.DatabaseLogger.Errorf("预约面试失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+		var stored string
+		if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).Select("netid").Scan(&stored).Error; err != nil {
+			logger.DatabaseLogger.Errorf("查询修改的netid失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+		if stored != netid {
+			return common.ErrNew(errors.New("预约面试失败"), common.AuthErr)
+		}
+		return nil
+	}); err != nil {
 		return common.ErrNew(err, common.SysErr)
+	}
+	if stu.Message%2 == 1 {
+		err := RegisterQueue.AddMessage(stu)
+		if err != nil {
+			println("添加订阅消息失败: %v", err)
+		}
 	}
 	// 更新成功
 	return nil
@@ -141,9 +180,14 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
-
+	for timeRange, _ := range BlockTable {
+		if record.Time.After(timeRange.Start) && record.Time.Before(timeRange.End) {
+			// 检查是否在不可预约时间段内
+			return common.ErrNew(errors.New("当前面试信息无法修改"), common.AuthErr)
+		}
+	}
 	// 检查面试记录是否属于该学生
-	if record.NetID == nil || *record.NetID != netid {
+	if record.NetID == nil && *record.NetID != netid {
 		return common.ErrNew(errors.New("该面试记录不属于该学生"), common.AuthErr)
 	}
 
@@ -161,22 +205,11 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 	return nil
 }
 
-// CheckFirst 检查学生是否第一次登录
-func CheckFirst(openid string) (bool, error) {
-	// 查询学生信息
-	var data model.Stu
-	if err := model.DB.Model(&model.Stu{}).Where("openid = ?", openid).First(&data).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return true, nil // 第一次登录
-		}
-		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
-		return false, common.ErrNew(err, common.SysErr)
-	}
-	return false, nil // 不是第一次登录
-}
-
 // GetRes 获取学生的面试结果
 func (*Stu) GetRes(netid string) (model.Interv, error) {
+	if time.Now().Before(AvailableTime) {
+		return model.Interv{}, common.ErrNew(errors.New("面试结果尚未公布"), common.OpErr)
+	}
 	var data model.Interv
 	if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).First(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询学生面试结果失败: %v", err)

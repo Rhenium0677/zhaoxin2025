@@ -21,7 +21,7 @@ generator: "@tarslib/widdershins v4.0.30"
 
 # zhaoxin2025
 
-Base URLs: 0.0.0.0:8088/api
+Base URLs:
 
 # Authentication
 
@@ -29,25 +29,21 @@ Base URLs: 0.0.0.0:8088/api
 
 ## GET RefreshSession
 
-GET api/session
+GET /session
 
 > 返回示例
 
-> 200 Response
+```json
+{
+  "success": false,
+  "message": "鉴权错误: 您未登录\n",
+  "code": 6
+}
+```
 
 ```json
 {
   "success": true
-}
-```
-
-> 200 Response
-
-```json
-{
-    "success": false,
-    "message": "鉴权错误：您未登录",
-    "code": 6
 }
 ```
 
@@ -69,7 +65,7 @@ POST /register
 
 ```json
 {
-  "netid": "3796546747",
+  "netid": "3796546547",
   "name": "说英",
   "password": "llzMpNILxfPIK7U",
   "level": "super"
@@ -211,7 +207,7 @@ PUT /stu
 |» star|body|[star](#schemastar)| 否 |none|
 |» message|body|integer| 否 |none|
 |» pass|body|[bool](#schemabool)| 否 |none|
-|» id|body|integer| 是 |ID 编号|
+|» id|body|integer| 是 |NetID 编号|
 
 #### 枚举值
 
@@ -260,6 +256,89 @@ GET /excel
 
 ### 返回数据结构
 
+## GET Stat
+
+GET /stat
+
+> 返回示例
+
+> 200 Response
+
+```json
+{}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+## POST SetTime
+
+POST /settime
+
+> Body 请求参数
+
+```json
+{
+  "time": "2025-11-21T17:31:30Z"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|body|body|object| 否 |none|
+|» time|body|string| 是 |none|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "success": true
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» success|boolean|true|none||none|
+
+## GET SendResultMessage
+
+GET /send
+
+> 返回示例
+
+> 200 Response
+
+```json
+{}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
 # stu
 
 ## PUT UpdateMessage
@@ -287,11 +366,17 @@ PUT /message
 
 > 返回示例
 
-> 200 Response
-
 ```json
 {
   "success": true
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "鉴权错误: 您未登录\n",
+  "code": 6
 }
 ```
 
@@ -321,13 +406,25 @@ DELETE /interv{id}
 
 > 返回示例
 
-> 200 Response
+```json
+{
+  "success": false,
+  "message": "记录不存在: 没找到\n",
+  "code": 8
+}
+```
 
 ```json
 {
-  "success": true,
-  "message": "string",
-  "code": 0
+  "success": false,
+  "message": "鉴权错误: 面试时间在半小时内或已经错过，无法取消预约\n",
+  "code": 6
+}
+```
+
+```json
+{
+  "success": true
 }
 ```
 
@@ -347,9 +444,9 @@ DELETE /interv{id}
 |» message|string|true|none||none|
 |» code|integer|true|none||none|
 
-## PUT AppointInterv
+## POST AppointInterv
 
-PUT /interv{id}
+POST /interv{id}
 
 ### 请求参数
 
@@ -359,13 +456,17 @@ PUT /interv{id}
 
 > 返回示例
 
-> 200 Response
+```json
+{
+  "success": true
+}
+```
 
 ```json
 {
-  "success": true,
-  "message": "string",
-  "code": 0
+  "success": false,
+  "message": "记录不存在: 该面试不存在\n",
+  "code": 8
 }
 ```
 
@@ -389,6 +490,52 @@ PUT /interv{id}
 
 GET /result
 
+返回信息：已登录学生对应的面试、该部门QQ群二维码图片URL与群号
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "id": 21,
+      "NetID": "1234567890",
+      "Time": "2025-10-27T10:00:00+08:00",
+      "Interviewer": "",
+      "Department": "tech",
+      "QueID": null,
+      "Que": null,
+      "Star": 0,
+      "Evaluation": "",
+      "Pass": 0
+    },
+    "url": "https://shameless-godfather.info/",
+    "qqgroup": "59"
+  }
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+## GET GetInterv
+
+GET /interv
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|date|query|string| 是 |none|
+
 > 返回示例
 
 > 200 Response
@@ -405,6 +552,36 @@ GET /result
 
 ### 返回数据结构
 
+## GET GetIntervDate
+
+GET /date
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "success": true,
+  "data": {}
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» success|boolean|true|none||none|
+|» data|object|true|none||none|
+
 # que
 
 ## PUT LuckyDog
@@ -415,7 +592,7 @@ PUT /lucky
 
 ```json
 {
-  "netid": "8887344593",
+  "netid": "1234567890",
   "queid": 2
 }
 ```
@@ -430,10 +607,18 @@ PUT /lucky
 
 > 返回示例
 
-> 200 Response
+```json
+{
+  "success": false,
+  "message": "记录不存在: 禁止虚空索敌\n",
+  "code": 8
+}
+```
 
 ```json
-{}
+{
+  "success": true
+}
 ```
 
 ### 返回结果
@@ -454,7 +639,7 @@ GET /
 
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
-|id|query|integer| 否 |ID 编号|
+|id|query|integer| 否 |NetID 编号|
 |department|query|string| 否 |none|
 |interviewer|query|string| 否 |none|
 |pass|query|integer| 否 |none|
@@ -487,10 +672,10 @@ POST /
 ```json
 {
   "timerange": {
-    "start": "2023-10-27T10:00:00+08:00",
-    "end": "2023-10-27T16:00:00+08:00"
+    "start": "2025-10-27T11:00:00+08:00",
+    "end": "2025-10-27T16:00:00+08:00"
   },
-  "interval": 36
+  "interval": 30
 }
 ```
 
@@ -509,7 +694,9 @@ POST /
 > 200 Response
 
 ```json
-{}
+{
+  "success": true
+}
 ```
 
 ### 返回结果
@@ -542,7 +729,7 @@ PUT /
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
 |body|body|object| 否 |none|
-|» id|body|integer| 是 |ID 编号|
+|» id|body|integer| 是 |NetID 编号|
 |» time|body|string| 否 |none|
 |» netid|body|[netid](#schemanetid)| 否 |none|
 |» department|body|[department](#schemadepartment)| 否 |none|
@@ -582,14 +769,22 @@ DELETE /
 
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
-|id|query|array[string]| 是 |ID 编号|
+|id|query|array[string]| 是 |NetID 编号|
 
 > 返回示例
 
-> 200 Response
+```json
+{
+  "success": true
+}
+```
 
 ```json
-{}
+{
+  "success": false,
+  "message": "记录不存在: 部分面试记录不存在\n",
+  "code": 8
+}
 ```
 
 ### 返回结果
@@ -609,10 +804,10 @@ PUT /block
 ```json
 {
   "timerange": {
-    "start": "2022-07-27T10:00:00Z",
-    "end": "2025-08-27T10:00:00Z"
+    "start": "2022-07-27T10:00:00+08:00",
+    "end": "2025-08-27T10:00:00+08:00"
   },
-  "block": false
+  "block": 0
 }
 ```
 
@@ -631,7 +826,9 @@ PUT /block
 > 200 Response
 
 ```json
-{}
+{
+  "success": true
+}
 ```
 
 ### 返回结果
@@ -651,8 +848,8 @@ PUT /group
 ```json
 {
   "url": "https://shameless-godfather.info/",
-  "qqgroup": "73",
-  "department": "art"
+  "qqgroup": "13",
+  "department": "video"
 }
 ```
 
@@ -700,6 +897,61 @@ PUT /group
 |» success|boolean|true|none||none|
 |» message|string|false|none||none|
 |» code|integer|false|none||none|
+
+## GET GetQue
+
+GET /que
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|department|query|string| 是 |none|
+
+#### 枚举值
+
+|属性|值|
+|---|---|
+|department|tech|
+|department|video|
+|department|art|
+
+> 返回示例
+
+> 200 Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 2,
+    "Question": "non dolore",
+    "Department": "tech",
+    "Url": "https://stupendous-travel.com/",
+    "Times": 0
+  }
+}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|none|Inline|
+
+### 返回数据结构
+
+状态码 **200**
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|» success|boolean|true|none||none|
+|» data|object|true|none||none|
+|»» id|integer|true|none||none|
+|»» Question|string|true|none||none|
+|»» Department|string|true|none||none|
+|»» Url|string|true|none||none|
+|»» Times|integer|true|none||none|
 
 # 数据模型
 

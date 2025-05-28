@@ -131,7 +131,7 @@ const (
   ```go
   // 校验函数
   func timing(fl validator.FieldLevel) bool {			// 自定义应满足的时间
-  	if date, ok := fl.Field().Interface().(time.Time); ok {
+  	if date, err := fl.Field().Interface().(time.Time); err {
   		today := time.Now()
   		if today.After(date) {
   			return false

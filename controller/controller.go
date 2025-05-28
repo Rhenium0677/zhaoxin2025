@@ -30,3 +30,19 @@ func (*Controller) RefreshSession(c *gin.Context) {
 	SessionSet(c, "user-session", user)
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
+
+func (*Controller) LogStatus(c *gin.Context) {
+	// 从Gin上下文中获取用户session
+	session := SessionGet(c, "user-session")
+	// 如果session不存在，则表示未登录
+	if session == nil {
+		c.JSON(http.StatusOK, ResponseNew(c, "未登录"))
+		return
+	}
+	// 返回session信息
+	c.JSON(http.StatusOK, ResponseNew(c, struct {
+		NetID string `json:"netid"`
+	}{
+		NetID: session.(UserSession).NetID,
+	}))
+}

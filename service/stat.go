@@ -6,17 +6,26 @@ import (
 )
 
 type Stat struct {
-	Province map[string]int `json:"province"`
-	School   map[string]int `json:"school"`
-	Gender   map[Gender]int `json:"gender"`
-	Total    int            `json:"total"`
+	Province []Province `json:"province"`
+	School   []School   `json:"school"`
+	Gender   Gender     `json:"gender"`
+	Total    int        `json:"total"`
 }
-type Gender string
 
-const (
-	Male   Gender = "男"
-	Female Gender = "女"
-)
+type Province struct {
+	Name   string `json:"name"`
+	Number int    `json:"number"`
+}
+
+type School struct {
+	Name   string `json:"name"`
+	Number int    `json:"number"`
+}
+
+type Gender struct {
+	Male    int `json:"male"`
+	Femaile int `json:"female"`
+}
 
 var provinceDict = map[int]string{
 	11: "北京",
@@ -57,20 +66,8 @@ var provinceDict = map[int]string{
 }
 
 func GetStat(data []model.Stu) Stat {
-	var res Stat
-	res.Total = len(data)
-	province := make(map[string]int)
-	school := make(map[string]int)
-	gender := make(map[Gender]int)
-	for _, stu := range data {
-		province[toProvince(stu.NetID)]++
-		school[stu.School]++
-		gender[toGender(stu.NetID)]++
-	}
-	res.Province = province
-	res.School = school
-	res.Gender = gender
-	return res
+	//todo
+	return Stat{}
 }
 
 // 输入学号,输出省份
@@ -80,12 +77,12 @@ func toProvince(netid string) string {
 	return provinceDict[numInt]
 }
 
-func toGender(netid string) Gender {
+func toGender(netid string) int {
 	num := netid[5:6]
 	numInt, _ := strconv.Atoi(num)
 	if numInt%2 == 1 {
-		return Male
+		return 1
 	} else {
-		return Female
+		return 0
 	}
 }

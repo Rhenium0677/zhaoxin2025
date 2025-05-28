@@ -73,6 +73,8 @@ func (*Interv) Update(info model.Interv) error {
 	return nil
 }
 
+//TODO:整体挪动学生面试
+
 // Delete 批量删除面试记录
 func (*Interv) Delete(info []int) error {
 	var count int64
@@ -93,7 +95,8 @@ func (*Interv) Delete(info []int) error {
 
 func (i *Interv) GetQue(department model.Department) (model.Que, error) {
 	var data []model.Que
-	if err := model.DB.Model(&model.Que{}).Where("department = ?", department).Find(&data).Error; err != nil {
+	if err := model.DB.Model(&model.Que{}).Where("department = ?", department).Find(&data).
+		Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.Que{}, common.ErrNew(errors.New("没有找到问题"), common.NotFoundErr)
 		}
@@ -105,15 +108,18 @@ func (i *Interv) GetQue(department model.Department) (model.Que, error) {
 	}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	id := r.Intn(len(data))
+	if err := model.DB.Model(&model.Que{}).Where("id = ?", id).
+		Update("times", gorm.Expr("times + ?", 1)).
+		Error; err != nil {
+		logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
+		return model.Que{}, common.ErrNew(err, common.SysErr)
+	}
 	return data[id], nil
 }
 
 func (*Interv) BlockAndRecover(timeRange TimeRange, block bool) error {
 	if block {
-		if err := model.DB.Model(&model.Interv{}).Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Delete(&model.Interv{}).Error; err != nil {
-			logger.DatabaseLogger.Errorf("禁止面试失败: %v", err)
-			return common.ErrNew(err, common.SysErr)
-		}
+		BlockTable[timeRange] = struct{}{}
 	} else {
 		if err := model.DB.Model(&model.Interv{}).Unscoped().Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Update("deleted_at", nil).Error; err != nil {
 			logger.DatabaseLogger.Errorf("恢复面试失败: %v", err)
@@ -121,4 +127,5 @@ func (*Interv) BlockAndRecover(timeRange TimeRange, block bool) error {
 		}
 	}
 	return nil
+	//	TODO: 不要直接删掉，学生选择的时候校验
 }

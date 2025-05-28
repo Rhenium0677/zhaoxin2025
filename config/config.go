@@ -20,6 +20,7 @@ var Config struct {
 	AllowHeaders string
 	LogLevel     string
 	AppSalt      string
+	TemplateID   string
 }
 
 func envOr(env string, or string) string {
@@ -49,4 +50,5 @@ func initConfig() {
 	Config.AllowHeaders = envOr("APP_ALLOW_HEADERS", "Origin|Content-Length|Content-Type|Authorization")
 	Config.LogLevel = envOr("APP_LOG_LEVEL", "info")
 	Config.AppSalt = envOr("APP_SALT", "saltwithlength16")
+	Config.TemplateID = envOr("APP_TEMPLATE_ID", "wx1234567890")
 }

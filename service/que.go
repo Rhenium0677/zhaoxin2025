@@ -13,7 +13,7 @@ type Que struct{}
 
 // 获取问题
 // 支持通过问题内容(que)、部门(department)、链接(url)进行筛选，并进行分页(pager)
-func (*Que) Get(que string, department model.Department, url string, pager common.PagerForm) (int64, []model.Que, error) {
+func (*Que) Get(que string, department []model.Department, url string, pager common.PagerForm) (int64, []model.Que, error) {
 	var data []model.Que
 	var count int64
 
@@ -23,8 +23,8 @@ func (*Que) Get(que string, department model.Department, url string, pager commo
 		db = db.Where("question LIKE ?", "%"+que+"%")
 	}
 	// 如果提供了部门筛选条件，则添加精确匹配
-	if department != "" {
-		db = db.Where("department = ?", department)
+	if department != nil {
+		db = db.Where("department IN ?", department)
 	}
 	if url != "" {
 		db = db.Where("url LIKE ?", url)
@@ -94,6 +94,7 @@ func (*Que) LuckyDog(netid string, queid int) error {
 			return common.ErrNew(err, common.SysErr)
 		}
 	}
+	//TODO
 	if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).Update("queid", queid).Error; err != nil {
 		logger.DatabaseLogger.Errorf("指定问题失败：%v", err)
 		return common.ErrNew(err, common.SysErr)

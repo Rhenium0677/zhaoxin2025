@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -30,33 +31,25 @@ func (*Stu) Login(c *gin.Context) {
 		return
 	}
 	// 调用服务层处理登录逻辑
-	openid, err := srv.Stu.Login(info.NetID, info.Code)
+	first, record, err := srv.Stu.Login(info.NetID, info.Code)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 	// 登录成功，设置用户session
 	SessionSet(c, "user-session", UserSession{
-		ID:       info.NetID,
-		Username: openid,
+		NetID:    info.NetID,
+		Username: record.OpenID,
 		Level:    1, // 学生level默认为1
 	})
 	// 返回成功响应
-	c.JSON(http.StatusOK, ResponseNew(c, nil))
-}
-
-// 学生登录状态
-// 获取当前学生的登录session信息
-func (*Stu) LogStatus(c *gin.Context) {
-	// 从Gin上下文中获取用户session
-	session := SessionGet(c, "user-session")
-	// 如果session不存在，则表示未登录
-	if session == nil {
-		c.JSON(http.StatusOK, ResponseNew(c, "未登录"))
-		return
-	}
-	// 返回session信息
-	c.JSON(http.StatusOK, ResponseNew(c, session))
+	c.JSON(http.StatusOK, ResponseNew(c, struct {
+		First bool `json:"first"` // 是否第一次登录
+		Stu   model.Stu
+	}{
+		First: first,
+		Stu:   record,
+	}))
 }
 
 // 学生登出
@@ -122,7 +115,7 @@ func (*Stu) UpdateMessage(c *gin.Context) {
 	// 从Gin上下文中获取用户session
 	session := SessionGet(c, "user-session").(UserSession)
 	// 将session中的用户ID转换为字符串netid
-	netid := session.ID
+	netid := session.NetID
 	message := 1*info.Subscribe + 2*info.IntervTime + 4*info.IntervRes
 	// 调用服务层更新学生的消息订阅状态
 	if err := srv.Stu.UpdateMessage(netid, message); err != nil {
@@ -140,6 +133,7 @@ func (*Stu) GetIntervDate(c *gin.Context) {
 		c.Error(err)
 		return
 	}
+	//TODO: 结构体切片
 	c.JSON(http.StatusOK, ResponseNew(c, data))
 }
 
@@ -161,7 +155,7 @@ func (*Stu) GetInterv(c *gin.Context) {
 	}
 	var available, unavailable []model.Interv
 	for _, value := range data {
-		if value.NetID != nil && *(value.NetID) != session.ID {
+		if value.NetID != nil && *(value.NetID) != session.NetID {
 			unavailable = append(unavailable, value)
 		} else {
 			available = append(available, value)
@@ -188,7 +182,7 @@ func (*Stu) AppointInterv(c *gin.Context) {
 	// 从Gin上下文中获取用户session
 	session := SessionGet(c, "user-session").(UserSession)
 	// 调用服务层预约面试
-	if err := srv.Stu.AppointInterv(session.ID, id); err != nil {
+	if err := srv.Stu.AppointInterv(session.NetID, id); err != nil {
 		c.Error(err)
 		return
 	}
@@ -206,7 +200,8 @@ func (*Stu) CancelInterv(c *gin.Context) {
 	// 从Gin上下文中获取用户session
 	session := SessionGet(c, "user-session").(UserSession)
 	// 调用服务层取消预约面试
-	if err := srv.Stu.CancelInterv(session.ID, id); err != nil {
+	//TODO: total
+	if err := srv.Stu.CancelInterv(session.NetID, id); err != nil {
 		c.Error(err)
 		return
 	}
@@ -217,12 +212,15 @@ func (*Stu) CancelInterv(c *gin.Context) {
 // GetResult 查询学生面试结果
 func (*Stu) GetRes(c *gin.Context) {
 	session := SessionGet(c, "user-session").(UserSession)
-	data, err := srv.Stu.GetRes(session.ID)
+	data, err := srv.Stu.GetRes(session.NetID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
-
+	if data.Department == "" {
+		c.Error(errors.New("未查询到面试结果"))
+		return
+	}
 	fileName := fmt.Sprintf("%s.json", data.Department)
 	targetDir := "QQGroup"
 	path := filepath.Join(targetDir, fileName)

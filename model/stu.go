@@ -15,6 +15,7 @@ type Stu struct {
 	Tag       string     `gorm:"column:tag;not null;comment:'标签'"`
 	Interv    *Interv    `gorm:"foreignKey:NetID;references:NetID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;comment:'面试信息'"`
 	Message   int        `gorm:"column:message;not null;default:0;comment:'消息'"`
+	QueID     int        `gorm:"column:queid;comment:'问题ID'"`
 }
 
 // Message 定义为

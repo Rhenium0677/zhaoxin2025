@@ -2,10 +2,13 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
+	"zhaoxin2025/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
@@ -34,7 +37,7 @@ func (*Admin) Login(c *gin.Context) {
 	}
 	// 设置session
 	SessionSet(c, "user-session", UserSession{
-		ID:       data.NetID,
+		NetID:    data.NetID,
 		Username: data.Name,
 		Level:    Level(data.Level),
 	})
@@ -52,18 +55,6 @@ func (*Admin) Logout(c *gin.Context) {
 	// 注销登录
 	SessionDelete(c, "user-session")
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
-}
-
-// LogStatus 管理员的登录状态
-func (*Admin) LogStatus(c *gin.Context) {
-	// 获取session
-	session := SessionGet(c, "user-session")
-	if session == nil {
-		c.JSON(http.StatusOK, ResponseNew(c, "未登录"))
-		return
-	}
-	// 响应
-	c.JSON(http.StatusOK, ResponseNew(c, session))
 }
 
 // 权限2
@@ -128,20 +119,20 @@ func (*Admin) GetStu(c *gin.Context) {
 // UpdateStu 更新一个学生信息
 func (*Admin) UpdateStu(c *gin.Context) {
 	var info struct {
-		NetID       string           `json:"netid" binding:"required,len=10,numeric"`
-		Name        string           `json:"name" binding:"omitempty"`
-		Phone       string           `json:"phone" binding:"omitempty"`
-		School      string           `json:"school" binding:"omitempty"`
-		Mastered    string           `json:"mastered" binding:"omitempty"`
-		ToMaster    string           `json:"tomaster" binding:"omitempty"`
-		First       model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
-		Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
-		QueID       int              `json:"que_id" binding:"omitempty,numeric"`
-		QueTime     time.Time        `json:"que_time" binding:"omitempty"`
-		Pass        int              `json:"pass" binding:"omitempty,oneof=0 1"`
-		Interviewer string           `json:"interviewer" binding:"omitempty"`
-		Evaluation  string           `json:"evaluation" binding:"omitempty"`
-		Star        int              `json:"star" binding:"omitempty"`
+		NetID    string           `json:"netid" binding:"required,len=10,numeric"`
+		Name     string           `json:"name" binding:"omitempty"`
+		Phone    string           `json:"phone" binding:"omitempty"`
+		School   string           `json:"school" binding:"omitempty"`
+		Mastered string           `json:"mastered" binding:"omitempty"`
+		ToMaster string           `json:"tomaster" binding:"omitempty"`
+		First    model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
+		Second   model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
+		QueID    int              `json:"que_id" binding:"omitempty,numeric"`
+	}
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
 	}
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
@@ -152,13 +143,14 @@ func (*Admin) UpdateStu(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
+	stu.ID = int64(id)
 	var interv model.Interv
 	if err := copier.Copy(&interv, &info); err != nil {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
 	// 更新学生信息
-	if err := srv.Admin.UpdateStu(stu, interv); err != nil {
+	if err := srv.Admin.UpdateStu(stu); err != nil {
 		c.Error(err)
 		return
 	}
@@ -169,17 +161,30 @@ func (*Admin) UpdateStu(c *gin.Context) {
 // Excelize 将学生数据输出成excel
 func (*Admin) Excelize(c *gin.Context) {
 	// 获取学生信息
-	err := srv.Admin.Excelize()
-	if err != nil {
+	if err := srv.Admin.Excelize(); err != nil {
 		c.Error(err)
 		return
 	}
+	const fileName = "tenzor2025.xlsx"
 	// 响应
-	c.JSON(http.StatusOK, ResponseNew(c, nil))
+	if _, err := http.Dir(".").Open(fileName); err != nil {
+		c.Error(common.ErrNew(errors.New("指定文件不存在或无法访问: "+fileName), common.NotFoundErr))
+		return
+	}
+
+	// 设置 Content-Disposition 头，确保浏览器下载文件并显示指定的文件名
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+
+	// 设置 Content-Type 为 XLSX 文档的正确 MIME 类型
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+	// 发送文件
+	c.File(fileName)
 }
 
 // Stat 统计学生信息并输出数据
 func (*Admin) Stat(c *gin.Context) {
+	// TODO: 用Object
 	// 获取统计数据
 	data, err := srv.Admin.Stat()
 	if err != nil {
@@ -213,7 +218,7 @@ func (*Admin) Register(c *gin.Context) {
 	}
 	// 设置session
 	SessionSet(c, "user-session", UserSession{
-		ID:       info.NetID,
+		NetID:    info.NetID,
 		Username: info.Name,
 		Level:    Level(info.Level),
 	})
@@ -230,6 +235,14 @@ func (*Admin) SetTime(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	srv.Admin.SetTime(info.Time)
+	service.AvailableTime = info.Time
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
+
+func (*Admin) SendResultMessage(c *gin.Context) {
+	if err := srv.Admin.SendResultMessage(); err != nil {
+		c.Error(err)
+		return
+	}
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }

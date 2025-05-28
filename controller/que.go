@@ -15,9 +15,9 @@ type Que struct{}
 // 根据提供的筛选条件（问题内容、部门、URL）和分页信息获取问题列表
 func (*Que) Get(c *gin.Context) {
 	var info struct {
-		Question   string           `form:"question" binding:"omitempty"`
-		Department model.Department `form:"department" binding:"omitempty,oneof=tech video art"`
-		Url        string           `form:"url" binding:"omitempty"`
+		Question   string             `form:"question" binding:"omitempty"`
+		Department []model.Department `form:"department" binding:"omitempty,dive,oneof=tech video art"`
+		Url        string             `form:"url" binding:"omitempty"`
 		common.PagerForm
 	}
 	// 绑定并验证查询参数

@@ -30,6 +30,17 @@ func Date(t time.Time) string {
 	return fmt.Sprintf("%04d-%02d-%02d", t.Year(), t.Month(), t.Day())
 }
 
+func Pass(pass int) string {
+	if pass == 1 {
+		return "已通过"
+	}
+	return "未通过"
+}
+
+func Time(time time.Time) string {
+	return time.Format("2006年01月02日 15:04:05")
+}
+
 // Excelize 将 Product 切片数据导出到 XLSX 文件
 // data: 要导出的 Stu 切片
 // filename: 输出的 XLSX 文件名
@@ -96,8 +107,9 @@ func Excelize(data []model.Stu, filename string) error {
 		}
 		if stu.Interv != nil {
 			rowData = append(rowData, (*stu.Interv).Time, (*stu.Interv).Interviewer, (*stu.Interv).Evaluation, (*stu.Interv).Star)
-			if (*stu.Interv).Que != nil {
-				rowData = append(rowData, (*stu.Interv).Que.Question)
+			var question string
+			if err := model.DB.Model(&model.Que{}).Where("id = ?", stu.QueID).Select("question").Scan(&question).Error; err != nil {
+				rowData = append(rowData, question)
 			}
 		}
 

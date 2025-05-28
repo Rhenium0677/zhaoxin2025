@@ -2,13 +2,12 @@ package controller
 
 import (
 	"encoding/gob"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
 type UserSession struct {
-	ID       string
+	NetID    string
 	Username string
 	Level    int
 }

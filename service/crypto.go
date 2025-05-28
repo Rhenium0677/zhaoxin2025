@@ -13,6 +13,9 @@ import (
 // Encrypt 加密函数
 func Encrypt(text string) (string, error) {
 	key := []byte(config.Config.AppSalt)
+	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
+		return "", errors.New("密钥长度必须为16、24或32字节")
+	}
 	plaintext := []byte(text)
 
 	block, err := aes.NewCipher(key)
@@ -38,6 +41,9 @@ func Encrypt(text string) (string, error) {
 // Decrypt 解密函数
 func Decrypt(ciphertext string) (string, error) {
 	key := []byte(config.Config.AppSalt)
+	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
+		return "", errors.New("密钥长度必须为16、24或32字节")
+	}
 	ciphertextBytes, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", err
