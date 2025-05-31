@@ -207,7 +207,7 @@ PUT /stu
 |» star|body|[star](#schemastar)| 否 |none|
 |» message|body|integer| 否 |none|
 |» pass|body|[bool](#schemabool)| 否 |none|
-|» id|body|integer| 是 |NetID 编号|
+|» id|body|integer| 是 |ID 编号|
 
 #### 枚举值
 
@@ -639,7 +639,7 @@ GET /
 
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
-|id|query|integer| 否 |NetID 编号|
+|id|query|integer| 否 |ID 编号|
 |department|query|string| 否 |none|
 |interviewer|query|string| 否 |none|
 |pass|query|integer| 否 |none|
@@ -729,7 +729,7 @@ PUT /
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
 |body|body|object| 否 |none|
-|» id|body|integer| 是 |NetID 编号|
+|» id|body|integer| 是 |ID 编号|
 |» time|body|string| 否 |none|
 |» netid|body|[netid](#schemanetid)| 否 |none|
 |» department|body|[department](#schemadepartment)| 否 |none|
@@ -769,7 +769,7 @@ DELETE /
 
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
-|id|query|array[string]| 是 |NetID 编号|
+|id|query|array[string]| 是 |ID 编号|
 
 > 返回示例
 

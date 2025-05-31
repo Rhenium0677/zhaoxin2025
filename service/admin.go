@@ -98,8 +98,9 @@ func (*Admin) UpdateStu(stuInfo model.Stu) error {
 // Excelize 获取学生信息并导出为excel
 func (*Admin) Excelize() error {
 	// 获取所有学生信息
+	//todo:处理Stu.Que转换成表格的问题
 	var data []model.Stu
-	if err := model.DB.Model(&model.Stu{}).Preload("Interv.Que").Find(&data).Error; err != nil {
+	if err := model.DB.Model(&model.Stu{}).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
