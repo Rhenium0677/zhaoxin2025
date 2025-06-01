@@ -177,7 +177,7 @@ func (*Interv) QQGroup(c *gin.Context) {
 	var info struct {
 		URL        string           `json:"url" binding:"required,url"`
 		QQGroup    string           `json:"qqgroup" binding:"required,numeric"`
-		Department model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
+		Department model.Department `json:"department" binding:"omitempty,oneof=tech video art none"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))

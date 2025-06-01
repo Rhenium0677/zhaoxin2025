@@ -133,8 +133,19 @@ func (*Stu) GetIntervDate(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	//TODO: 结构体切片
-	c.JSON(http.StatusOK, ResponseNew(c, data))
+	type date struct {
+		Date  string `json:"date"`
+		Total int    `json:"total"`
+	}
+	var response []date
+	for k, v := range data {
+		date := date{
+			Date:  k,
+			Total: v,
+		}
+		response = append(response, date)
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, response))
 }
 
 // GetInterv 查询某天可用与不可用的面试数量

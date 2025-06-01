@@ -10,8 +10,8 @@ func InitRouter(r *gin.Engine) {
 	r.Use(middleware.Error)
 	r.Use(middleware.GinLogger(), middleware.GinRecovery(true))
 	apiRouter := r.Group("/api")
-	apiRouter.GET("/session", ctr.RefreshSession, middleware.CheckRole(1))
 	apiRouter.GET("/", ctr.LogStatus)
+	apiRouter.GET("/session", ctr.RefreshSession, middleware.CheckRole(1))
 	{
 		adminRouter := apiRouter.Group("/admin")
 		{

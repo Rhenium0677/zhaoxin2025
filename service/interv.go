@@ -121,11 +121,10 @@ func (*Interv) BlockAndRecover(timeRange TimeRange, block bool) error {
 	if block {
 		BlockTable[timeRange] = struct{}{}
 	} else {
-		if err := model.DB.Model(&model.Interv{}).Unscoped().Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Update("deleted_at", nil).Error; err != nil {
-			logger.DatabaseLogger.Errorf("恢复面试失败: %v", err)
-			return common.ErrNew(err, common.SysErr)
+		if _, ok := BlockTable[timeRange]; !ok {
+			return common.ErrNew(errors.New("没有找到对应的封禁时间段"), common.NotFoundErr)
 		}
+		delete(BlockTable, timeRange)
 	}
 	return nil
-	//	TODO: 不要直接删掉，学生选择的时候校验
 }

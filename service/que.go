@@ -85,8 +85,8 @@ func (*Que) Update(info model.Que) error {
 // LuckyDog 指定问题
 // 根据提供的NetID和QueID来给幸运儿指定问题
 func (*Que) LuckyDog(netid string, queid int) error {
-	var record model.Interv
-	if err := model.DB.Where("netid = ?", netid).First(&record).Error; err != nil {
+	var record model.Stu
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
 		} else {
@@ -94,8 +94,7 @@ func (*Que) LuckyDog(netid string, queid int) error {
 			return common.ErrNew(err, common.SysErr)
 		}
 	}
-	//TODO
-	if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).Update("queid", queid).Error; err != nil {
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).Update("queid", queid).Error; err != nil {
 		logger.DatabaseLogger.Errorf("指定问题失败：%v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
