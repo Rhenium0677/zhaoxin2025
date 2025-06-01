@@ -77,8 +77,8 @@ func Send() {
 			cron.SkipIfStillRunning(cron.DefaultLogger),
 			cron.Recover(cron.DefaultLogger),
 		))
-		// 每50分钟执行一次，获取需要发送的订阅消息
-		if _, err := c.AddFunc("@every 10m", func() {
+		// 每30分钟执行一次，获取需要发送的订阅消息
+		if _, err := c.AddFunc("@every 30m", func() {
 			var record []model.Stu
 			if err := model.DB.Model(&model.Stu{}).Where("message > 0").Preload("Interv").Find(&record).Error; err != nil {
 				println("定时任务: 查询学生信息失败: %v", err)

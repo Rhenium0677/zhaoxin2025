@@ -66,15 +66,46 @@ var provinceDict = map[int]string{
 }
 
 func GetStat(data []model.Stu) Stat {
-	//todo
-	return Stat{}
+	res := Stat{}
+	res.Total = len(data)
+	province := make(map[string]int)
+	school := make(map[string]int)
+	gender := make(map[string]int)
+	for _, stu := range data {
+		province[provinceDict[toProvince(stu.NetID)]]++
+		school[stu.School]++
+		if toGender(stu.NetID) == 1 {
+			gender["male"]++
+		} else {
+			gender["female"]++
+		}
+	}
+	res.Province = make([]Province, 0, res.Total)
+	for k, v := range province {
+		res.Province = append(res.Province, Province{
+			Name:   k,
+			Number: v,
+		})
+	}
+	res.School = make([]School, 0, res.Total)
+	for k, v := range school {
+		res.School = append(res.School, School{
+			Name:   k,
+			Number: v,
+		})
+	}
+	res.Gender = Gender{
+		Male:    gender["male"],
+		Femaile: gender["female"],
+	}
+	return res
 }
 
 // 输入学号,输出省份
-func toProvince(netid string) string {
+func toProvince(netid string) int {
 	num := netid[3:5]
 	numInt, _ := strconv.Atoi(num)
-	return provinceDict[numInt]
+	return numInt
 }
 
 func toGender(netid string) int {
