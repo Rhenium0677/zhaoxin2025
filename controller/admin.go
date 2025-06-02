@@ -86,8 +86,8 @@ func (*Admin) GetStu(c *gin.Context) {
 		Name        string           `json:"name" binding:"omitempty"`
 		Phone       string           `json:"phone" binding:"omitempty,len=11,numeric"`
 		School      string           `json:"school" binding:"omitempty"`
-		First       model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
-		Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
+		First       model.Department `json:"first" binding:"omitempty,oneof=tech video art none"`
+		Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art none"`
 		Pass        int              `json:"pass" binding:"omitempty,oneof=0 1"`
 		Interviewer string           `json:"interviewer" binding:"omitempty"`
 		Star        int              `json:"star" binding:"omitempty"`
@@ -184,7 +184,6 @@ func (*Admin) Excelize(c *gin.Context) {
 
 // Stat 统计学生信息并输出数据
 func (*Admin) Stat(c *gin.Context) {
-	// TODO: 用Object
 	// 获取统计数据
 	data, err := srv.Admin.Stat()
 	if err != nil {

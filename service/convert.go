@@ -107,6 +107,8 @@ func Excelize(data []model.Stu, filename string) error {
 		}
 		if stu.Interv != nil {
 			rowData = append(rowData, (*stu.Interv).Time, (*stu.Interv).Interviewer, (*stu.Interv).Evaluation, (*stu.Interv).Star)
+		}
+		if stu.QueID != 0 {
 			var question string
 			if err := model.DB.Model(&model.Que{}).Where("id = ?", stu.QueID).Select("question").Scan(&question).Error; err != nil {
 				rowData = append(rowData, question)

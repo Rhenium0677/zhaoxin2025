@@ -93,7 +93,7 @@ func (*Interv) Delete(info []int) error {
 	return nil
 }
 
-func (i *Interv) GetQue(department model.Department) (model.Que, error) {
+func (i *Interv) GetQue(netid string, department model.Department) (model.Que, error) {
 	var data []model.Que
 	if err := model.DB.Model(&model.Que{}).Where("department = ?", department).Find(&data).
 		Error; err != nil {

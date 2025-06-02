@@ -58,9 +58,6 @@ func (*Admin) Update(netid string, name string, password string) error {
 // 筛选并获取学生信息
 func (*Admin) GetStu(stuInfo model.Stu, intervInfo model.Interv) ([]model.Stu, error) {
 	var data []model.Stu
-	if stuInfo.NetID != "" {
-		//	TODO
-	}
 	db := model.DB.Model(&model.Stu{}).Preload("Interv").Where(&stuInfo)
 	if intervInfo.Evaluation != "" {
 		// 关联查询
@@ -98,7 +95,6 @@ func (*Admin) UpdateStu(stuInfo model.Stu) error {
 // Excelize 获取学生信息并导出为excel
 func (*Admin) Excelize() error {
 	// 获取所有学生信息
-	//todo:处理Stu.Que转换成表格的问题
 	var data []model.Stu
 	if err := model.DB.Model(&model.Stu{}).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)

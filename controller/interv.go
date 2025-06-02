@@ -141,13 +141,14 @@ func (*Interv) Delete(c *gin.Context) {
 
 func (*Interv) GetQue(c *gin.Context) {
 	var info struct {
+		NetID      string           `form:"netid" binding:"required,numeric,len=10"`
 		Department model.Department `form:"department" binding:"required,oneof=tech video art"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	data, err := srv.Interv.GetQue(info.Department)
+	data, err := srv.Interv.GetQue(info.NetID, info.Department)
 	if err != nil {
 		c.Error(err)
 		return
