@@ -21,9 +21,9 @@ generator: "@tarslib/widdershins v4.0.30"
 
 # zhaoxin2025
 
-[小程序api]()
+[小程序api](小程序.md)
 
-[后台api]()
+[后台api](后台.md)
 
 ## 通用api
 

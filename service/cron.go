@@ -21,12 +21,12 @@ func RefreshAccessToken() {
 		// 启动一个 goroutine，在 5 分钟后重试
 		go func() {
 			time.Sleep(5 * time.Minute)
-			println("重试任务: 5 分钟后尝试刷新 AccessToken... ")
+			fmt.Println("重试任务: 5 分钟后尝试刷新 AccessToken... ")
 			err := GetAccessToken()
 			if err != nil {
-				println("重试任务: 刷新 AccessToken 仍然失败: %v", err)
+				fmt.Printf("重试任务: 刷新 AccessToken 仍然失败: %v\n", err)
 			} else {
-				println("重试任务: AccessToken 刷新成功。")
+				fmt.Println("重试任务: AccessToken 刷新成功。")
 			}
 		}()
 		return
@@ -66,7 +66,7 @@ func (q *Queue) ConsumeMessage(handler func(model.Stu) error) {
 			}
 			fmt.Printf("Consumer: Processed message OpenID: %s\n", msg.OpenID)
 		}
-		fmt.Printf("Consumer: Finished processing messages")
+		fmt.Printf("Consumer: Finished processing messages\n")
 	}()
 }
 
@@ -81,7 +81,7 @@ func Send() {
 		if _, err := c.AddFunc("@every 30m", func() {
 			var record []model.Stu
 			if err := model.DB.Model(&model.Stu{}).Where("message > 0").Preload("Interv").Find(&record).Error; err != nil {
-				println("定时任务: 查询学生信息失败: %v", err)
+				fmt.Printf("定时任务: 查询学生信息失败: %v\n", err)
 				return
 			}
 			for _, stu := range record {
@@ -89,16 +89,16 @@ func Send() {
 				if (message<<1)&1 == 1 && time.Now().Add(30*time.Minute).After(stu.Interv.Time) {
 					err := TimeQueue.AddMessage(stu)
 					if err != nil {
-						println("添加面试时间订阅消息失败: %v", err)
+						fmt.Printf("添加面试时间订阅消息失败: %v\n", err)
 					}
 				}
 			}
 		}); err != nil {
-			println("定时任务: 添加定时任务失败: %v", err)
+			fmt.Printf("定时任务: 添加定时任务失败: %v\n", err)
 		}
 		c.Start()
 	}()
 	TimeQueue.ConsumeMessage(SendTime)
 	ResultQueue.ConsumeMessage(SendResult)
-	ResultQueue.ConsumeMessage(SendResult)
+	RegisterQueue.ConsumeMessage(SendRegister)
 }

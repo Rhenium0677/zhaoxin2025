@@ -121,7 +121,27 @@ func (*Interv) Swap(id1, id2 int) error {
 	return nil
 }
 
+// GetQue 为一个学生抽题，若幸运儿则假装抽过
 func (i *Interv) GetQue(netid string, department model.Department) (model.Que, error) {
+	var record model.Stu
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.Que{}, common.ErrNew(errors.New("没有找到学生信息"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
+		return model.Que{}, common.ErrNew(err, common.SysErr)
+	}
+	if record.QueID != 0 {
+		var que model.Que
+		if err := model.DB.Model(&model.Que{}).Where("id = ?", record.QueID).First(&que).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return model.Que{}, common.ErrNew(errors.New("没有找到问题"), common.NotFoundErr)
+			}
+			logger.DatabaseLogger.Errorf("查询问题失败: %v", err)
+			return model.Que{}, common.ErrNew(err, common.SysErr)
+		}
+		return que, nil // 如果是幸运儿，直接返回
+	}
 	var data []model.Que
 	if err := model.DB.Model(&model.Que{}).Where("department = ?", department).Find(&data).
 		Error; err != nil {
@@ -136,10 +156,22 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 	}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	id := r.Intn(len(data))
-	if err := model.DB.Model(&model.Que{}).Where("id = ?", id).
+	tx := model.DB.Begin()
+	if err := tx.Model(&model.Stu{}).Where("netid = ?", netid).
+		Update("que_id", data[id].ID).Error; err != nil {
+		tx.Rollback()
+		logger.DatabaseLogger.Errorf("更新学生问题ID失败: %v", err)
+		return model.Que{}, common.ErrNew(err, common.SysErr)
+	}
+	if err := tx.Model(&model.Que{}).Where("id = ?", id).
 		Update("times", gorm.Expr("times + ?", 1)).
 		Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
+		tx.Rollback()
+		return model.Que{}, common.ErrNew(err, common.SysErr)
+	}
+	if err := tx.Commit().Error; err != nil {
+		logger.DatabaseLogger.Errorf("提交事务失败: %v", err)
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
 	return data[id], nil
