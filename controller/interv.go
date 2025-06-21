@@ -139,6 +139,27 @@ func (*Interv) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
+// Swap 交换面试记录
+func (*Interv) Swap(c *gin.Context) {
+	var info struct {
+		ID1 int `json:"id1" binding:"required"`
+		ID2 int `json:"id2" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	if info.ID1 == info.ID2 {
+		c.Error(common.ErrNew(errors.New("不能交换同一条记录"), common.ParamErr))
+		return
+	}
+	if err := srv.Interv.Swap(info.ID1, info.ID2); err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
+
 func (*Interv) GetQue(c *gin.Context) {
 	var info struct {
 		NetID      string           `form:"netid" binding:"required,numeric,len=10"`

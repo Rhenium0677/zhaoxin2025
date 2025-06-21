@@ -92,7 +92,7 @@ func (*Admin) GetStu(c *gin.Context) {
 		Interviewer string           `json:"interviewer" binding:"omitempty"`
 		Star        int              `json:"star" binding:"omitempty"`
 	}
-	if err := c.ShouldBindJSON(&info); err != nil {
+	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}

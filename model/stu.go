@@ -2,20 +2,20 @@ package model
 
 type Stu struct {
 	BaseModel
-	OpenID    string     `gorm:"column:openid;type:varchar(50);unique;not null;comment:'微信OpenID'"`
-	NetID     string     `gorm:"column:netid;type:varchar(10);unique;not null;comment:'NetID'"`
-	Name      string     `gorm:"column:name;not null;comment:'姓名'"`
-	Phone     string     `gorm:"column:phone;not null;comment:'电话号码'"`
-	School    string     `gorm:"column:school;not null;comment:'书院'"`
-	WhereKnow string     `gorm:"column:whereknow;not null;comment:'在哪里知道的'"`
-	Mastered  string     `gorm:"column:mastered;not null;comment:'已经会的技能'"`
-	ToMaster  string     `gorm:"column:tomaster;not null;comment:'想要掌握的技能'"`
-	First     Department `gorm:"column:first;type:enum('tech','video','art','none');default:'none';comment:'第一意向'"`
-	Second    Department `gorm:"column:second;type:enum('tech','video','art','none');default:'none';comment:'第二意向'"`
-	Tag       string     `gorm:"column:tag;not null;comment:'标签'"`
-	Interv    *Interv    `gorm:"foreignKey:NetID;references:NetID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;comment:'面试信息'"`
-	Message   int        `gorm:"column:message;not null;default:0;comment:'消息'"`
-	QueID     int        `gorm:"column:queid;comment:'问题ID'"`
+	OpenID    string     `gorm:"column:openid;type:varchar(50);unique;not null;comment:'微信OpenID'" json:"openid"`
+	NetID     string     `gorm:"column:netid;type:varchar(10);unique;not null;comment:'NetID'" json:"netid"`
+	Name      string     `gorm:"column:name;not null;comment:'姓名'" json:"name"`
+	Phone     string     `gorm:"column:phone;not null;comment:'电话号码'" json:"phone"`
+	School    string     `gorm:"column:school;not null;comment:'书院'" json:"school"`
+	WhereKnow string     `gorm:"column:whereknow;not null;comment:'在哪里知道的'" json:"whereknow"`
+	Mastered  string     `gorm:"column:mastered;not null;comment:'已经会的技能'" json:"mastered"`
+	ToMaster  string     `gorm:"column:tomaster;not null;comment:'想要掌握的技能'" json:"tomaster"`
+	First     Department `gorm:"column:first;type:enum('tech','video','art','none');default:'none';comment:'第一意向'" json:"first"`
+	Second    Department `gorm:"column:second;type:enum('tech','video','art','none');default:'none';comment:'第二意向'" json:"second"`
+	Tag       string     `gorm:"column:tag;not null;comment:'标签'" json:"tag"`
+	Interv    *Interv    `gorm:"foreignKey:NetID;references:NetID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;comment:'面试信息'" json:"interv"`
+	Message   int        `gorm:"column:message;not null;default:0;comment:'消息'" json:"message"`
+	QueID     int        `gorm:"column:queid;comment:'问题ID'" json:"queid"`
 }
 
 // Message 定义为

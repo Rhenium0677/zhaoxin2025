@@ -73,8 +73,6 @@ func (*Interv) Update(info model.Interv) error {
 	return nil
 }
 
-//TODO:整体挪动学生面试
-
 // Delete 批量删除面试记录
 func (*Interv) Delete(info []int) error {
 	var count int64
@@ -90,6 +88,36 @@ func (*Interv) Delete(info []int) error {
 		return common.ErrNew(err, common.SysErr)
 	}
 	// 返回删除失败的ID列表和可能的错误
+	return nil
+}
+
+// Swap 交换两个面试记录
+func (*Interv) Swap(id1, id2 int) error {
+	var record1, record2 model.Interv
+	// 检查要交换的记录是否存在
+	if err := model.DB.Model(&model.Interv{}).Where("id = ?", id1).First(&record1).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	if err := model.DB.Model(&model.Interv{}).Where("id = ?", id2).First(&record2).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	record1.ID, record2.ID = record2.ID, record1.ID // 交换ID
+	if err := model.DB.Model(&model.Interv{}).Where("id = ?", id1).Updates(&record1).Error; err != nil {
+		logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	if err := model.DB.Model(&model.Interv{}).Where("id = ?", id2).Updates(&record2).Error; err != nil {
+		logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
 	return nil
 }
 
