@@ -78,7 +78,7 @@ func Send() {
 			cron.Recover(cron.DefaultLogger),
 		))
 		// 每30分钟执行一次，获取需要发送的订阅消息
-		if _, err := c.AddFunc("@every 30m", func() {
+		if _, err := c.AddFunc("@every 10m", func() {
 			var record []model.Stu
 			if err := model.DB.Model(&model.Stu{}).Where("message > 0").Preload("Interv").Find(&record).Error; err != nil {
 				fmt.Printf("定时任务: 查询学生信息失败: %v\n", err)
@@ -86,7 +86,7 @@ func Send() {
 			}
 			for _, stu := range record {
 				message := stu.Message
-				if (message<<1)&1 == 1 && time.Now().Add(30*time.Minute).After(stu.Interv.Time) {
+				if (message<<1)&1 == 1 && time.Now().Add(20*time.Minute).Before(stu.Interv.Time) && time.Now().Add(30*time.Minute).After(stu.Interv.Time) {
 					err := TimeQueue.AddMessage(stu)
 					if err != nil {
 						fmt.Printf("添加面试时间订阅消息失败: %v\n", err)
@@ -103,7 +103,7 @@ func Send() {
 			cron.SkipIfStillRunning(cron.DefaultLogger),
 			cron.Recover(cron.DefaultLogger),
 		))
-		// 每10分钟执行一次，获取并发送面试结果消息
+		// 每10分钟执行一次，获取并发送面试时间消息
 		if _, err := c.AddFunc("@every 10m", func() {
 			fd, err := AliyunSendItvTimeMsg()
 			if err != nil {
@@ -116,12 +116,12 @@ func Send() {
 				} else {
 					stu := model.Stu{NetID: f.NetID}
 					if err := ResultQueue.AddMessage(stu); err != nil {
-						fmt.Printf("定时任务: 添加面试结果订阅消息失败: %v\n", err)
+						fmt.Printf("定时任务: 发送面试时间订阅消息失败: %v\n", err)
 					}
 				}
 			}
 		}); err != nil {
-			fmt.Printf("定时任务: 添加定时任务失败: %v\n", err)
+			fmt.Printf("定时任务: 添加发送面试时间任务失败: %v\n", err)
 		}
 		c.Start()
 	}()
