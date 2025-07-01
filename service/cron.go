@@ -98,6 +98,33 @@ func Send() {
 		}
 		c.Start()
 	}()
+	go func() {
+		c := cron.New(cron.WithChain(
+			cron.SkipIfStillRunning(cron.DefaultLogger),
+			cron.Recover(cron.DefaultLogger),
+		))
+		// 每10分钟执行一次，获取并发送面试结果消息
+		if _, err := c.AddFunc("@every 10m", func() {
+			fd, err := AliyunSendItvTimeMsg()
+			if err != nil {
+				fmt.Printf("定时任务: 获取面试时间订阅消息失败: %v\n", err)
+				return
+			}
+			for _, f := range fd {
+				if f.ErrCode != 0 {
+					fmt.Printf("定时任务: 发送面试时间订阅消息失败, NetID: %s, ErrCode: %d\n", f.NetID, f.ErrCode)
+				} else {
+					stu := model.Stu{NetID: f.NetID}
+					if err := ResultQueue.AddMessage(stu); err != nil {
+						fmt.Printf("定时任务: 添加面试结果订阅消息失败: %v\n", err)
+					}
+				}
+			}
+		}); err != nil {
+			fmt.Printf("定时任务: 添加定时任务失败: %v\n", err)
+		}
+		c.Start()
+	}()
 	TimeQueue.ConsumeMessage(SendTime)
 	ResultQueue.ConsumeMessage(SendResult)
 	RegisterQueue.ConsumeMessage(SendRegister)

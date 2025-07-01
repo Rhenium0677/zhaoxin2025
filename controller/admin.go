@@ -245,3 +245,14 @@ func (*Admin) SendResultMessage(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
+
+// 这里是向阿里云发送请求接口?
+// 原来的代码在这里收集了管理员的netid,不太理解
+func (a *Admin) AliyunSendMsg(c *gin.Context) {
+	data, err := srv.Admin.AliyunSendItvResMsg()
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, data))
+}

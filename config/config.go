@@ -6,21 +6,23 @@ import (
 )
 
 var Config struct {
-	AppProd      bool
-	AppMode      string
-	AppID        string
-	AppSecret    string
-	AppLanguage  string
-	MysqlHost    string
-	MysqlPort    string
-	MysqlName    string
-	MysqlUser    string
-	MysqlPass    string
-	AllowOrigins string
-	AllowHeaders string
-	LogLevel     string
-	AppSalt      string
-	TemplateID   string
+	AppProd                     bool
+	AppMode                     string
+	AppID                       string
+	AppSecret                   string
+	AppLanguage                 string
+	MysqlHost                   string
+	MysqlPort                   string
+	MysqlName                   string
+	MysqlUser                   string
+	MysqlPass                   string
+	AllowOrigins                string
+	AllowHeaders                string
+	LogLevel                    string
+	AppSalt                     string
+	TemplateID                  string
+	AlibabaCloudAccessKeyID     string
+	AlibabaCloudAccessKeySecret string
 }
 
 func envOr(env string, or string) string {
@@ -51,4 +53,6 @@ func initConfig() {
 	Config.LogLevel = envOr("APP_LOG_LEVEL", "info")
 	Config.AppSalt = envOr("APP_SALT", "saltwithlength16")
 	Config.TemplateID = envOr("APP_TEMPLATE_ID", "wx1234567890")
+	Config.AlibabaCloudAccessKeyID = envOr("ALIBABA_ACCESS_KEY_ID", "123456")
+	Config.AlibabaCloudAccessKeySecret = envOr("ALIBABA_ACCESS_KEY_SECRET", "123456")
 }

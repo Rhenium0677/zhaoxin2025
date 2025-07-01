@@ -2,8 +2,14 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
+	dysmsapi20170525 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
+	util "github.com/alibabacloud-go/tea-utils/v2/service"
+	"github.com/alibabacloud-go/tea/tea"
 	"time"
 	"zhaoxin2025/common"
+	"zhaoxin2025/config"
 	"zhaoxin2025/logger"
 	"zhaoxin2025/model"
 
@@ -163,4 +169,175 @@ func (*Admin) SendResultMessage() error {
 		}
 	}
 	return nil
+}
+
+// 发送短信
+// 有关短信的操作
+// 这是发送面试结果短息的函数
+func sendItvResMsg(pass bool, number string, name string, department string) error {
+	client, _err := CreateClient(tea.String(config.Config.AlibabaCloudAccessKeyID), tea.String(config.Config.AlibabaCloudAccessKeySecret))
+	if _err != nil {
+		return _err
+	}
+
+	var tpCode string
+	// 短信对应代码,结合自己的短信格式的代码进行设置
+
+	if pass {
+		tpCode = "SMS_463215609"
+	} else {
+		tpCode = "SMS_463195599"
+	}
+
+	sendSmsRequest := &dysmsapi20170525.SendSmsRequest{
+		PhoneNumbers:  tea.String(number),
+		SignName:      tea.String("挑战网"),
+		TemplateCode:  tea.String(tpCode),
+		TemplateParam: tea.String(fmt.Sprintf("{\"name\":\"%s\",\"department\":\"%s\"}", name, department)),
+	}
+
+	runtime := &util.RuntimeOptions{}
+	tryErr := func() (_e error) {
+		defer func() {
+			if r := tea.Recover(recover()); r != nil {
+				_e = r
+			}
+		}()
+		// 复制代码运行请自行打印 API 的返回值
+		_, _err = client.SendSmsWithOptions(sendSmsRequest, runtime)
+		if _err != nil {
+			return _err
+		}
+
+		return nil
+	}()
+
+	if tryErr != nil {
+		var error = &tea.SDKError{}
+		if _t, ok := tryErr.(*tea.SDKError); ok {
+			error = _t
+		} else {
+			error.Message = tea.String(tryErr.Error())
+		}
+		// 如有需要，请打印 error
+		msg, _err := util.AssertAsString(error.Message)
+		if _err != nil {
+			return _err
+		}
+		return errors.New(*msg)
+	}
+	return _err
+}
+
+func AliyunSendItvTimeMsg() (fs []FailSend, err error) {
+	var intervs []model.Interv
+	if err := model.DB.
+		Model(&model.Interv{}).Where("time > ? AND time < ?", time.Now().Add(20*time.Minute), time.Now().Add(30*time.Minute)).
+		Not("netid = ?", "").Find(&intervs).Error; err != nil {
+		return fs, common.ErrNew(errors.New("查询学生信息出错"), common.SysErr)
+	}
+	for _, interv := range intervs {
+		var stu model.Stu
+		if interv.NetID == nil || model.DB.Model(&model.Stu{}).Where("netid = ?", interv.NetID).First(&stu).Error != nil {
+			fs = append(fs, FailSend{NetID: stu.NetID, ErrCode: -1})
+		}
+		intervTime := interv.Time
+		err := sendItvTimeMsg(stu.Phone, stu.Name, fmt.Sprintf("%d年%d月%d日 %s:%s", intervTime.Year(), intervTime.Month(), intervTime.Day(), intervTime.String()[11:13], intervTime.String()[14:16]), string(stu.First))
+		if err != nil {
+			fs = append(fs, FailSend{NetID: stu.NetID, ErrCode: -1})
+		}
+	}
+	return fs, nil
+}
+
+// 发送面试通知短信
+func sendItvTimeMsg(phone string, name string, time string, department string) (err error) {
+	client, err := CreateClient(&config.Config.AlibabaCloudAccessKeyID, &config.Config.AlibabaCloudAccessKeySecret)
+	if err != nil {
+		return err
+	}
+	sendSmsRequest := &dysmsapi20170525.SendSmsRequest{
+		PhoneNumbers:  tea.String(phone),
+		SignName:      tea.String("挑战网"),
+		TemplateCode:  tea.String("SMS_471010064"),
+		TemplateParam: tea.String(fmt.Sprintf("{\"name\":\"%s\",\"time\":\"%s\",\"department\":\"%s\"}", name, time, department)),
+	}
+	runtime := &util.RuntimeOptions{}
+	tryErr := func() (_e error) {
+		defer func() {
+			if r := tea.Recover(recover()); r != nil {
+				_e = r
+			}
+		}()
+		// 复制代码运行请自行打印 API 的返回值
+		_, _err := client.SendSmsWithOptions(sendSmsRequest, runtime)
+		if _err != nil {
+			return _err
+		}
+
+		return nil
+	}()
+
+	if tryErr != nil {
+		var err = &tea.SDKError{}
+		if _t, ok := tryErr.(*tea.SDKError); ok {
+			err = _t
+		} else {
+			err.Message = tea.String(tryErr.Error())
+		}
+		// 如有需要，请打印 err
+		msg, _err := util.AssertAsString(err.Message)
+		if _err != nil {
+			return _err
+		}
+		return errors.New(*msg)
+	}
+	return err
+}
+
+func CreateClient(accessKeyId *string, accessKeySecret *string) (_result *dysmsapi20170525.Client, _err error) {
+	config := &openapi.Config{
+		// 必填，您的 AccessKey ID
+		AccessKeyId: accessKeyId,
+		// 必填，您的 AccessKey Secret
+		AccessKeySecret: accessKeySecret,
+	}
+	// Endpoint 请参考 https://api.aliyun.com/product/Dysmsapi
+	config.Endpoint = tea.String("dysmsapi.aliyuncs.com")
+	_result = &dysmsapi20170525.Client{}
+	_result, _err = dysmsapi20170525.NewClient(config)
+	return _result, _err
+}
+
+// 发送短信
+// 有关数据库的操作
+func (a *Admin) AliyunSendItvResMsg() (cocacola interface{}, err error) {
+	// 向Aliyun发送请求
+	var user []StuMsgInfo
+	if err = model.DB.
+		Table("students").
+		Joins("LEFT JOIN interviews ON students.netid = interviews.netid").
+		Select("students.*", "interviews.time").
+		Find(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, common.ErrNew(errors.New("当前学号不存在"), common.NotFoundErr)
+		}
+		return nil, common.ErrNew(errors.New("没有查到,请联系管理员解决"), common.SysErr)
+	}
+	for _, value := range user {
+		var check bool
+		if value.Interv == "已通过" {
+			check = true
+		} else if value.Interv == "未通过" {
+			check = false
+		} else {
+			continue
+		}
+		// 发短信在这里
+		err := sendItvResMsg(check, value.Phone, value.Name, value.First)
+		if err != nil {
+			continue
+		}
+	}
+	return nil, nil
 }
