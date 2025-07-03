@@ -10,8 +10,7 @@ type Stu struct {
 	WhereKnow string     `gorm:"column:whereknow;not null;comment:'在哪里知道的'" json:"whereknow"`
 	Mastered  string     `gorm:"column:mastered;not null;comment:'已经会的技能'" json:"mastered"`
 	ToMaster  string     `gorm:"column:tomaster;not null;comment:'想要掌握的技能'" json:"tomaster"`
-	First     Department `gorm:"column:first;type:enum('tech','video','art','none');default:'none';comment:'第一意向'" json:"first"`
-	Second    Department `gorm:"column:second;type:enum('tech','video','art','none');default:'none';comment:'第二意向'" json:"second"`
+	Depart    Department `gorm:"column:depart;type:enum('tech','video','art','none');default:'none';comment:'第一意向'" json:"depart"`
 	Tag       string     `gorm:"column:tag;not null;comment:'标签'" json:"tag"`
 	Interv    *Interv    `gorm:"foreignKey:NetID;references:NetID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;comment:'面试信息'" json:"interv"`
 	Message   int        `gorm:"column:message;not null;default:0;comment:'消息'" json:"message"`

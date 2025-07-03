@@ -242,7 +242,7 @@ func AliyunSendItvTimeMsg() (fs []FailSend, err error) {
 			fs = append(fs, FailSend{NetID: stu.NetID, ErrCode: -1})
 		}
 		intervTime := interv.Time
-		err := sendItvTimeMsg(stu.Phone, stu.Name, fmt.Sprintf("%d年%d月%d日 %s:%s", intervTime.Year(), intervTime.Month(), intervTime.Day(), intervTime.String()[11:13], intervTime.String()[14:16]), string(stu.First))
+		err := sendItvTimeMsg(stu.Phone, stu.Name, fmt.Sprintf("%d年%d月%d日 %s:%s", intervTime.Year(), intervTime.Month(), intervTime.Day(), intervTime.String()[11:13], intervTime.String()[14:16]), string(stu.Depart))
 		if err != nil {
 			fs = append(fs, FailSend{NetID: stu.NetID, ErrCode: -1})
 		}

@@ -196,7 +196,7 @@ func SendMessage(openid string, data any) error {
 func SendRegister(record model.Stu) error {
 	if err := SendMessage(record.OpenID, RegisterMessage{
 		Name:   Field{record.Name},
-		ReType: Field{string(record.First)},
+		ReType: Field{string(record.Depart)},
 		Interv: Field{Pass(record.Interv.Pass)},
 		Time:   Field{Time(record.Interv.Time)},
 		Note:   Field{"欢迎报名挑战网招新面试，期待你的如约而至！"},
