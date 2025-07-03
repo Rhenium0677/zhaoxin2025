@@ -41,7 +41,15 @@ func (*Admin) Login(c *gin.Context) {
 		Username: data.Name,
 		Level:    Level(data.Level),
 	})
-	c.JSON(http.StatusOK, ResponseNew(c, nil))
+	c.JSON(http.StatusOK, ResponseNew(c, struct {
+		NetID string `json:"netid"`
+		Name  string `json:"name"`
+		Level string `json:"level"`
+	}{
+		NetID: data.NetID,
+		Name:  data.Name,
+		Level: string(data.Level),
+	}))
 }
 
 // Logout 管理员的注销
