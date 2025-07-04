@@ -32,8 +32,8 @@ func (*Que) Get(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, ResponseNew(c, struct {
-		Total int64
-		Data  []model.Que
+		Total int64       `json:"total"`
+		Data  []model.Que `json:"questions"`
 	}{
 		Total: total,
 		Data:  data,
