@@ -55,10 +55,9 @@ func (*Que) New(list []model.Que) error {
 // 根据提供的ID列表批量删除问题记录
 func (*Que) Delete(ids []int) error {
 	// 直接使用 GORM 的 Delete 方法，通过主键ID列表删除记录
-	result := model.DB.Delete(&model.Que{}, ids)
-	if result.Error != nil {
-		logger.DatabaseLogger.Errorf("批量删除问题失败：%v", result.Error)
-		return common.ErrNew(result.Error, common.SysErr)
+	if err := model.DB.Model(&model.Que{}).Delete(&model.Que{}, ids).Error; err != nil {
+		logger.DatabaseLogger.Errorf("批量删除问题失败：%v", err)
+		return common.ErrNew(err, common.SysErr)
 	}
 	return nil
 }
