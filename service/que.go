@@ -13,7 +13,7 @@ type Que struct{}
 
 // 获取问题
 // 支持通过问题内容(que)、部门(department)、链接(url)进行筛选，并进行分页(pager)
-func (*Que) Get(que string, department []model.Department, url string, pager common.PagerForm) (int64, []model.Que, error) {
+func (*Que) Get(que string, department []model.Department, url string) (int64, []model.Que, error) {
 	var data []model.Que
 	var count int64
 
@@ -34,7 +34,7 @@ func (*Que) Get(que string, department []model.Department, url string, pager com
 		return 0, nil, err
 	}
 	// 执行分页查询并获取结果
-	if err := db.Omit("created_at", "updated_at", "deleted_at").Offset((pager.Page - 1) * pager.Limit).Limit(pager.Limit).Find(&data).Error; err != nil {
+	if err := db.Omit("created_at", "updated_at", "deleted_at").Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取问题失败：%v", err)
 		return 0, nil, common.ErrNew(err, common.SysErr)
 	}

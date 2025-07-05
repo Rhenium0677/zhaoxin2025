@@ -12,13 +12,12 @@ import (
 type Que struct{}
 
 // Get 获取问题
-// 根据提供的筛选条件（问题内容、部门、URL）和分页信息获取问题列表
+// 根据提供的筛选条件（问题内容、部门、URL）获取问题列表
 func (*Que) Get(c *gin.Context) {
 	var info struct {
 		Question   string             `form:"question" binding:"omitempty"`
 		Department []model.Department `form:"department" binding:"omitempty,dive,oneof=tech video art"`
 		Url        string             `form:"url" binding:"omitempty"`
-		common.PagerForm
 	}
 	// 绑定并验证查询参数
 	if err := c.ShouldBind(&info); err != nil {
@@ -26,7 +25,7 @@ func (*Que) Get(c *gin.Context) {
 		return
 	}
 	// 调用服务层获取问题数据
-	total, data, err := srv.Que.Get(info.Question, info.Department, info.Url, info.PagerForm)
+	total, data, err := srv.Que.Get(info.Question, info.Department, info.Url)
 	if err != nil {
 		c.Error(err)
 		return
