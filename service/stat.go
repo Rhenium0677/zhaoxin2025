@@ -29,9 +29,12 @@ type Gender struct {
 }
 
 type Depart struct {
-	Tech  int `json:"tech"`
-	Art   int `json:"art"`
-	Video int `json:"video"`
+	Tech      int `json:"tech"`
+	Art       int `json:"art"`
+	Video     int `json:"video"`
+	TechPass  int `json:"tech_pass"`
+	ArtPass   int `json:"art_pass"`
+	VideoPass int `json:"video_pass"`
 }
 
 var provinceDict = map[int]string{
@@ -72,14 +75,15 @@ var provinceDict = map[int]string{
 	99: "外国",
 }
 
-func GetStat(data []model.Stu) Stat {
+func GetStat(stus []model.Stu, intervs []model.Interv) Stat {
 	res := Stat{}
-	res.Total = len(data)
+	res.Total = len(stus)
+
 	province := make(map[string]int)
 	school := make(map[string]int)
 	gender := make(map[string]int)
 	depart := make(map[string]int)
-	for _, stu := range data {
+	for _, stu := range stus {
 		province[provinceDict[toProvince(stu.NetID)]]++
 		school[stu.School]++
 		depart[string(stu.Depart)]++
@@ -87,6 +91,17 @@ func GetStat(data []model.Stu) Stat {
 			gender["male"]++
 		} else {
 			gender["female"]++
+		}
+	}
+	for _, interv := range intervs {
+		if interv.Department == model.Tech && interv.Pass == 1 {
+			depart["tech_pass"]++
+		}
+		if interv.Department == model.Art && interv.Pass == 1 {
+			depart["art_pass"]++
+		}
+		if interv.Department == model.Video && interv.Pass == 1 {
+			depart["video_pass"]++
 		}
 	}
 	res.Province = make([]Province, 0, res.Total)
@@ -108,9 +123,12 @@ func GetStat(data []model.Stu) Stat {
 		Femaile: gender["female"],
 	}
 	res.Depart = Depart{
-		Tech:  depart["tech"],
-		Art:   depart["art"],
-		Video: depart["video"],
+		Tech:      depart["tech"],
+		Art:       depart["art"],
+		Video:     depart["video"],
+		TechPass:  depart["tech_pass"],
+		ArtPass:   depart["art_pass"],
+		VideoPass: depart["video_pass"],
 	}
 	return res
 }

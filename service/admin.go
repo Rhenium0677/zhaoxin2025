@@ -102,7 +102,7 @@ func (*Admin) UpdateStu(stuInfo model.Stu) error {
 func (*Admin) Excelize() error {
 	// 获取所有学生信息
 	var data []model.Stu
-	if err := model.DB.Model(&model.Stu{}).Find(&data).Error; err != nil {
+	if err := model.DB.Model(&model.Stu{}).Preload("Interv").Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
@@ -115,12 +115,17 @@ func (*Admin) Excelize() error {
 
 // Stat 获取学生信息并统计
 func (*Admin) Stat() (Stat, error) {
-	var data []model.Stu
-	if err := model.DB.Model(&model.Stu{}).Find(&data).Error; err != nil {
+	var stus []model.Stu
+	if err := model.DB.Model(&model.Stu{}).Find(&stus).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)
 		return Stat{}, common.ErrNew(err, common.SysErr)
 	}
-	return GetStat(data), nil
+	var intervs []model.Interv
+	if err := model.DB.Model(&model.Interv{}).Find(&intervs).Error; err != nil {
+		logger.DatabaseLogger.Errorf("获取面试信息失败：%v", err)
+		return Stat{}, common.ErrNew(err, common.SysErr)
+	}
+	return GetStat(stus, intervs), nil
 }
 
 // Register 管理员注册
