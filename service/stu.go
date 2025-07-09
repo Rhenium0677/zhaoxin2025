@@ -17,11 +17,11 @@ type Stu struct{}
 // 通过微信code获取openid，查询或创建学生记录，并校验openid
 func (*Stu) Login(netid string, code string) (bool, model.Stu, error) {
 	// 调用微信登录接口获取用户信息
-	_, openid, err := WxLogin(code)
-	//openid := "just for test remember to modify these lines"
-	if err != nil {
-		return false, model.Stu{}, common.ErrNew(err, common.AuthErr)
-	}
+	//_, openid, err := WxLogin(code)
+	openid := "just for test remember to modify these lines"
+	//if err != nil {
+	//	return false, model.Stu{}, common.ErrNew(err, common.AuthErr)
+	//}
 	if openid == "" {
 		return false, model.Stu{}, common.ErrNew(errors.New("获取openid失败"), common.AuthErr)
 	}
@@ -51,7 +51,7 @@ func (*Stu) Login(netid string, code string) (bool, model.Stu, error) {
 }
 
 // Update 更新学生信息
-// 根据传入的netid，更新学生表中的对应记录
+// 根据传入的id，更新学生表中的对应记录
 func (*Stu) Update(info model.Stu) error {
 	var record model.Stu
 	if err := model.DB.Model(&model.Stu{}).Where("id = ?", info.ID).First(&record).Error; err != nil {
@@ -61,7 +61,7 @@ func (*Stu) Update(info model.Stu) error {
 		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
-	// 根据netid更新学生信息
+	// 根据id更新学生信息
 	if err := model.DB.Model(&model.Stu{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新学生信息失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
