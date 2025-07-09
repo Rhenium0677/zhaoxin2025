@@ -44,8 +44,8 @@ func (*Stu) Login(c *gin.Context) {
 	})
 	// 返回成功响应
 	c.JSON(http.StatusOK, ResponseNew(c, struct {
-		First bool `json:"first"` // 是否第一次登录
-		Stu   model.Stu
+		First bool      `json:"first"` // 是否第一次登录
+		Stu   model.Stu `json:"stu"`   // 学生信息
 	}{
 		First: first,
 		Stu:   record,
