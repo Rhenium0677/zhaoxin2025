@@ -18,7 +18,7 @@ func InitRouter(r *gin.Engine) {
 			adminRouter.POST("/", ctr.Admin.Login)
 			adminRouter.DELETE("/", ctr.Admin.Logout)
 
-			//adminRouter.Use(middleware.CheckRole(2))
+			adminRouter.Use(middleware.CheckRole(2))
 			adminRouter.PUT("/", ctr.Admin.Update)
 			adminRouter.GET("/stu", ctr.Admin.GetStu)
 			adminRouter.PUT("/stu", ctr.Admin.UpdateStu)
@@ -26,7 +26,7 @@ func InitRouter(r *gin.Engine) {
 			adminRouter.GET("/stat", ctr.Admin.Stat)
 			adminRouter.GET("/aliyun", ctr.Admin.AliyunSendMsg)
 
-			//adminRouter.Use(middleware.CheckRole(3))
+			adminRouter.Use(middleware.CheckRole(3))
 			adminRouter.POST("/register", ctr.Admin.Register)
 			adminRouter.POST("/settime", ctr.Admin.SetTime)
 			adminRouter.GET("/send", ctr.Admin.SendResultMessage)
@@ -34,9 +34,9 @@ func InitRouter(r *gin.Engine) {
 		stuRouter := apiRouter.Group("/stu")
 		{
 			stuRouter.POST("/", ctr.Stu.Login)
+			stuRouter.DELETE("/", ctr.Stu.Logout)
 
 			stuRouter.Use(middleware.CheckRole(1))
-			stuRouter.DELETE("/", ctr.Stu.Logout)
 			stuRouter.PUT("/", ctr.Stu.Update)
 			stuRouter.PUT("/message", ctr.Stu.UpdateMessage)
 			stuRouter.GET("/date", ctr.Stu.GetIntervDate)
@@ -47,13 +47,14 @@ func InitRouter(r *gin.Engine) {
 		}
 		intervRouter := apiRouter.Group("/interv")
 		{
+			intervRouter.GET("/que", ctr.Interv.GetQue)
+
 			intervRouter.Use(middleware.CheckRole(2))
 			intervRouter.GET("/", ctr.Interv.Get)
 			intervRouter.POST("/", ctr.Interv.New)
 			intervRouter.DELETE("/", ctr.Interv.Delete)
 			intervRouter.PUT("/swap", ctr.Interv.Swap)
 			intervRouter.PUT("/", ctr.Interv.Update)
-			intervRouter.GET("/que", ctr.Interv.GetQue)
 			intervRouter.PUT("/block", ctr.Interv.BlockAndRecover)
 			intervRouter.PUT("/group", ctr.Interv.QQGroup)
 		}
