@@ -52,6 +52,7 @@ func InitRouter(r *gin.Engine) {
 			intervRouter.Use(middleware.CheckRole(2))
 			intervRouter.GET("/", ctr.Interv.Get)
 			intervRouter.POST("/", ctr.Interv.New)
+			intervRouter.POST("/create", ctr.Interv.Create)
 			intervRouter.DELETE("/", ctr.Interv.Delete)
 			intervRouter.PUT("/swap", ctr.Interv.Swap)
 			intervRouter.PUT("/", ctr.Interv.Update)

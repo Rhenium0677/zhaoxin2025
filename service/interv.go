@@ -55,6 +55,19 @@ func (*Interv) New(info TimeRange, interval int) ([]time.Time, error) {
 	return nil, nil
 }
 
+func (*Interv) Create(netid string, department model.Department, time time.Time) error {
+	var interv = model.Interv{
+		NetID:      &netid,
+		Department: department,
+		Time:       time,
+	}
+	if err := model.DB.Model(&model.Interv{}).Create(&interv).Error; err != nil {
+		logger.DatabaseLogger.Errorf("创建面试记录失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	return nil
+}
+
 // Update 更新面试记录信息
 func (*Interv) Update(info model.Interv) error {
 	var record model.Interv

@@ -87,6 +87,23 @@ func (*Interv) New(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
+func (*Interv) Create(c *gin.Context) {
+	var info struct {
+		NetID      string           `json:"netid" binding:"required,numeric,len=10"`
+		Department model.Department `json:"department" binding:"required,oneof=tech video art"`
+		Time       time.Time        `json:"time" binding:"required"`
+	}
+	if err := c.ShouldBind(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	if err := srv.Interv.Create(info.NetID, info.Department, info.Time); err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
+
 // 更新面试记录
 // 更新评价、是否通过、星级等信息
 func (*Interv) Update(c *gin.Context) {
