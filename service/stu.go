@@ -15,7 +15,7 @@ type Stu struct{}
 
 // Login 处理学生登录逻辑
 // 通过微信code获取openid，查询或创建学生记录，并校验openid
-func (*Stu) Login(netid string, code string) (bool, model.Stu, error) {
+func (*Stu) Login(code string) (bool, model.Stu, error) {
 	// 调用微信登录接口获取用户信息
 	_, openid, err := WxLogin(code)
 	//openid := "just for test remember to modify these lines"
@@ -26,25 +26,20 @@ func (*Stu) Login(netid string, code string) (bool, model.Stu, error) {
 		return false, model.Stu{}, common.ErrNew(errors.New("获取openid失败"), common.AuthErr)
 	}
 	var record model.Stu
-	// 根据netid查询学生信息
-	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&record).Error; err != nil {
+	// 根据openid查询学生信息
+	if err := model.DB.Model(&model.Stu{}).Where("openid = ?", openid).First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 如果是第一次登录，创建学生记录
 			if err := model.DB.Model(&model.Stu{}).Create(&model.Stu{
-				NetID:  netid,
 				OpenID: openid,
 			}).Error; err != nil {
 				logger.DatabaseLogger.Errorf("创建学生记录失败: %v", err)
 				return true, model.Stu{}, common.ErrNew(err, common.SysErr)
 			}
-			return true, model.Stu{NetID: netid, OpenID: openid}, nil
+			return true, model.Stu{OpenID: openid}, nil
 		}
 		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return false, model.Stu{}, common.ErrNew(err, common.SysErr)
-	}
-	// 校验数据库中存储的openid与本次登录获取的openid是否一致
-	if record.OpenID != openid {
-		return false, record, common.ErrNew(errors.New("数据库中openid与用code获取到的openid不一致"), common.AuthErr)
 	}
 	// 登录成功，返回openid
 	return false, record, nil

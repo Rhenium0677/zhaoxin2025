@@ -22,8 +22,7 @@ type Stu struct{}
 // 接收学生NetID和微信code，进行登录验证并设置session
 func (*Stu) Login(c *gin.Context) {
 	var info struct {
-		NetID string `json:"netid" binding:"required,len=10,numeric"`
-		Code  string `json:"code" binding:"required"`
+		Code string `json:"code" binding:"required"`
 	}
 	// 绑定并验证请求参数
 	if err := c.ShouldBind(&info); err != nil {
@@ -31,14 +30,14 @@ func (*Stu) Login(c *gin.Context) {
 		return
 	}
 	// 调用服务层处理登录逻辑
-	first, record, err := srv.Stu.Login(info.NetID, info.Code)
+	first, record, err := srv.Stu.Login(info.Code)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 	// 登录成功，设置用户session
 	SessionSet(c, "user-session", UserSession{
-		NetID:    info.NetID,
+		NetID:    "",
 		Username: record.OpenID,
 		Level:    1, // 学生level默认为1
 	})
