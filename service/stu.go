@@ -32,6 +32,7 @@ func (*Stu) Login(code string) (bool, model.Stu, error) {
 			// 如果是第一次登录，创建学生记录
 			if err := model.DB.Model(&model.Stu{}).Create(&model.Stu{
 				OpenID: openid,
+				NetID:  openid,
 			}).Error; err != nil {
 				logger.DatabaseLogger.Errorf("创建学生记录失败: %v", err)
 				return true, model.Stu{}, common.ErrNew(err, common.SysErr)
