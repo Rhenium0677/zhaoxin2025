@@ -3,7 +3,7 @@ package model
 type Stu struct {
 	BaseModel
 	OpenID    string     `gorm:"column:openid;type:varchar(50);unique;not null;comment:'微信OpenID'" json:"openid"`
-	NetID     string     `gorm:"column:netid;type:varchar(10);unique;not null;comment:'NetID'" json:"netid"`
+	NetID     string     `gorm:"column:netid;type:varchar(10);not null;comment:'NetID'" json:"netid"`
 	Name      string     `gorm:"column:name;not null;comment:'姓名'" json:"name"`
 	Phone     string     `gorm:"column:phone;not null;comment:'电话号码'" json:"phone"`
 	School    string     `gorm:"column:school;not null;comment:'书院'" json:"school"`

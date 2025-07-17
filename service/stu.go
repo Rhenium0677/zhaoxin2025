@@ -56,6 +56,16 @@ func (*Stu) Update(info model.Stu) error {
 		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
+	existed := model.Stu{}
+	if err := model.DB.Model(&model.Stu{}).
+		Where("netid = ? AND id != ?", info.NetID, info.ID).First(&existed).
+		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		logger.DatabaseLogger.Errorf("查询NetID是否重复失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	if existed.ID != 0 {
+		return common.ErrNew(errors.New("NetID已存在"), common.OpErr)
+	}
 	// 根据id更新学生信息
 	if err := model.DB.Model(&model.Stu{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新学生信息失败: %v", err)
