@@ -30,14 +30,13 @@ func (*Stu) Login(code string) (bool, model.Stu, error) {
 	if err := model.DB.Model(&model.Stu{}).Where("openid = ?", openid).First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 如果是第一次登录，创建学生记录
-			if err := model.DB.Model(&model.Stu{}).Create(&model.Stu{
-				OpenID: openid,
-				NetID:  openid,
-			}).Error; err != nil {
+			record.OpenID = openid
+			record.NetID = openid
+			if err := model.DB.Model(&model.Stu{}).Create(&record).Error; err != nil {
 				logger.DatabaseLogger.Errorf("创建学生记录失败: %v", err)
 				return true, model.Stu{}, common.ErrNew(err, common.SysErr)
 			}
-			return true, model.Stu{OpenID: openid}, nil
+			return true, record, nil
 		}
 		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return false, model.Stu{}, common.ErrNew(err, common.SysErr)
