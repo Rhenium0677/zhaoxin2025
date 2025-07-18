@@ -85,6 +85,12 @@ func (*Stu) Update(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	prevSession := SessionGet(c, "user-session").(UserSession)
+	SessionSet(c, "user-session", UserSession{
+		NetID:    info.NetID,
+		Username: prevSession.Username,
+		Level:    1, // 学生level默认为1
+	})
 	var stu model.Stu
 	if err := copier.Copy(&stu, &info); err != nil {
 		c.Error(common.ErrNew(err, common.SysErr))
@@ -113,6 +119,10 @@ func (*Stu) UpdateMessage(c *gin.Context) {
 	}
 	// 从Gin上下文中获取用户session
 	session := SessionGet(c, "user-session").(UserSession)
+	if err := NetIDValid(session); err != nil {
+		c.Error(common.ErrNew(err, common.OpErr)) // 如果NetID无效，返回错误
+		return
+	}
 	// 将session中的用户ID转换为字符串netid
 	netid := session.NetID
 	message := 1*info.Subscribe + 2*info.IntervTime + 4*info.IntervRes
@@ -191,6 +201,10 @@ func (*Stu) AppointInterv(c *gin.Context) {
 	}
 	// 从Gin上下文中获取用户session
 	session := SessionGet(c, "user-session").(UserSession)
+	if err := NetIDValid(session); err != nil {
+		c.Error(common.ErrNew(err, common.OpErr)) // 如果NetID无效，返回错误
+		return
+	}
 	// 调用服务层预约面试
 	if err := srv.Stu.AppointInterv(session.NetID, id); err != nil {
 		c.Error(err)
@@ -209,8 +223,11 @@ func (*Stu) CancelInterv(c *gin.Context) {
 	}
 	// 从Gin上下文中获取用户session
 	session := SessionGet(c, "user-session").(UserSession)
+	if err := NetIDValid(session); err != nil {
+		c.Error(common.ErrNew(err, common.OpErr)) // 如果NetID无效，返回错误
+		return
+	}
 	// 调用服务层取消预约面试
-	//TODO: total
 	if err := srv.Stu.CancelInterv(session.NetID, id); err != nil {
 		c.Error(err)
 		return
@@ -222,6 +239,10 @@ func (*Stu) CancelInterv(c *gin.Context) {
 // GetResult 查询学生面试结果
 func (*Stu) GetRes(c *gin.Context) {
 	session := SessionGet(c, "user-session").(UserSession)
+	if err := NetIDValid(session); err != nil {
+		c.Error(common.ErrNew(err, common.OpErr)) // 如果NetID无效，返回错误
+		return
+	}
 	data, err := srv.Stu.GetRes(session.NetID)
 	if err != nil {
 		c.Error(err)

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/gob"
+	"errors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
@@ -39,4 +40,11 @@ func SessionClear(c *gin.Context) {
 func SessionDelete(c *gin.Context, name string) {
 	session := sessions.Default(c)
 	session.Delete(name)
+}
+
+func NetIDValid(session UserSession) error {
+	if session.NetID == "" {
+		return errors.New("NetID无效，请先更新NetID") // NetID 为空，表示NetID未设置或无效
+	}
+	return nil // NetID 有效
 }
