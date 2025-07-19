@@ -132,35 +132,28 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 	}
 	// 检查面试记录是否已经被预约
 	if record.NetID != nil && *record.NetID != "" {
-		return common.ErrNew(errors.New("该面试记录已经被预约"), common.AuthErr)
+		return common.ErrNew(errors.New("该面试已经被预约"), common.AuthErr)
 	}
 	// 更新学生的面试记录
 	var stu model.Stu
-	if err := model.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&model.Interv{}).Where("id = ?", intervid).Update("netid", netid).Error; err != nil {
-			logger.DatabaseLogger.Errorf("预约面试失败: %v", err)
-			return common.ErrNew(err, common.SysErr)
+	return model.DB.Model(&model.Interv{}).Transaction(func(tx *gorm.DB) error {
+		result := tx.Where("id = ?", intervid).Where("netid is NULL").Update("netid", netid)
+		if result.Error != nil {
+			logger.DatabaseLogger.Errorf("预约面试失败: %v", result.Error)
+			return common.ErrNew(result.Error, common.SysErr)
 		}
-		var stored string
-		if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).Select("netid").Scan(&stored).Error; err != nil {
-			logger.DatabaseLogger.Errorf("查询修改的netid失败: %v", err)
-			return common.ErrNew(err, common.SysErr)
+		if result.RowsAffected == 0 {
+			return common.ErrNew(errors.New("预约面试失败，请稍后再试"), common.SysErr)
 		}
-		if stored != netid {
-			return common.ErrNew(errors.New("预约面试失败"), common.AuthErr)
+		if stu.Message%2 == 1 {
+			err := RegisterQueue.AddMessage(stu)
+			if err != nil {
+				println("添加订阅消息失败: %v", err)
+			}
 		}
+		// 更新成功
 		return nil
-	}); err != nil {
-		return common.ErrNew(err, common.SysErr)
-	}
-	if stu.Message%2 == 1 {
-		err := RegisterQueue.AddMessage(stu)
-		if err != nil {
-			println("添加订阅消息失败: %v", err)
-		}
-	}
-	// 更新成功
-	return nil
+	})
 }
 
 // CancelInterv 取消学生的面试预约

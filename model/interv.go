@@ -6,7 +6,7 @@ import (
 
 type Interv struct {
 	BaseModel
-	NetID       *string    `gorm:"column:netid;type:varchar(10);comment:'NetID'" json:"netid"`
+	NetID       *string    `gorm:"column:netid;type:varchar(50);comment:'NetID'" json:"netid"`
 	Time        time.Time  `gorm:"column:time;not null;comment:'面试时间'" json:"time"`
 	Interviewer string     `gorm:"column:interviewer;not null;comment:'面试官姓名'" json:"interviewer"`
 	Department  Department `gorm:"column:department;not null;comment:'面试部门'" json:"department"`
