@@ -77,14 +77,18 @@ steps:
         from_secret: APP_MYSQL_USER
       APP_MYSQL_PASS:
         from_secret: APP_MYSQL_PASS
-      ALIBABA_CLOUD_ACCESS_KEY_ID:
-        from_secret: ALIBABA_CLOUD_ACCESS_KEY_ID
-      ALIBABA_CLOUD_ACCESS_KEY_SECRET:
-        from_secret: ALIBABA_CLOUD_ACCESS_KEY_SECRET
+      ALIBABA_ACCESS_KEY_ID:
+        from_secret: ALIBABA_ACCESS_KEY_ID
+      ALIBABA_ACCESS_KEY_SECRET:
+        from_secret: ALIBABA_ACCESS_KEY_SECRET
       APP_ID:
         from_secret: APP_ID
-      MINI_APP_SECRET:
-        from_secret: MINI_APP_SECRET
+      APP_SECRET:
+        from_secret: APP_SECRET
+      APP_SALT:
+        from_secret: APP_SALT
+      APP_TEMPLATE_ID:
+        from_secret: APP_TEMPLATE_ID
     when:
       ref:
         - refs/tags/*+deploy
