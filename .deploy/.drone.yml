@@ -45,7 +45,7 @@ steps:
         - refs/tags/*+release
 
   - name: deploy
-    image: docker.1panel.live/library/docker
+    image: docker
     commands:
       - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD registry.op.tiaozhan.com
       - docker compose -f .deploy/docker-compose.yml -p $APP_NAME stop
