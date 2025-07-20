@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  app:
+    container_name: ${APP_NAME}
+    image: registry.op.tiaozhan.com/${APP_NAME}:latest
+    ports:
+      - "${APP_PORT}:8088"
+    environment:
+      - TZ=Asia/Shanghai
+      - APP_PROD=release
+      - APP_ID=${APP_ID}
+      - APP_SECRET=${APP_SECRET}
+      - APP_MYSQL_HOST=${APP_MYSQL_HOST}
+      - APP_MYSQL_PORT=${APP_MYSQL_PORT}
+      - APP_MYSQL_NAME=${APP_MYSQL_NAME}
+      - APP_MYSQL_USER=${APP_MYSQL_USER}
+      - APP_MYSQL_PASS=${APP_MYSQL_PASS}
+      - ALIBABA_CLOUD_ACCESS_KEY_ID=${ALIBABA_CLOUD_ACCESS_KEY_ID}
+      - ALIBABA_CLOUD_ACCESS_KEY_SECRET=${ALIBABA_CLOUD_ACCESS_KEY_SECRET}
+      - MINI_APP_SECRET=${MINI_APP_SECRET}
+      - APP_LANGUAGE=zh
+      - APP_LOG_LEVEL=info
+    volumes:
+      - /tz-slaver-data/app_log/${APP_NAME}:/runtime/log

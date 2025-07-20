@@ -1,0 +1,106 @@
+kind: pipeline
+type: docker
+name: build
+
+steps:
+  - name: build
+    image: docker.1panel.live/library/golang:alpine
+    commands:
+      - go env -w GO111MODULE=on
+      - go env -w GOPROXY=https://goproxy.cn,direct
+      - go mod tidy
+      - go build -o go_app
+    volumes:
+      - name: go_pkg
+        path: /go/pkg/mod
+    when:
+      ref:
+        - refs/tags/*+build
+        - refs/tags/*+release
+
+  - name: containerization
+    image: dhub.kubesre.xyz/plugins/docker
+    volumes:
+    - name: docker_data
+      path: /var/lib/docker
+    - name: docker_socket
+      path: /var/run/docker.sock
+    settings:
+      username:
+        from_secret: DOCKER_USERNAME
+      password:
+        from_secret: DOCKER_PASSWORD
+      registry: registry.op.tiaozhan.com
+      repo: registry.op.tiaozhan.com/${DRONE_REPO_NAME,,}
+      dockerfile: .deploy/Dockerfile
+      tags:
+        - latest
+        - ${DRONE_SEMVER_SHORT}-${DRONE_COMMIT_SHA:0:8}
+      cache_from:
+        - registry.op.tiaozhan.com/${DRONE_REPO_NAME,,}:latest
+      daemon_off: true
+    when:
+      ref:
+        - refs/tags/*+build
+        - refs/tags/*+release
+
+  - name: deploy
+    image: docker.1panel.live/library/docker
+    commands:
+      - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD registry.op.tiaozhan.com
+      - docker compose -f .deploy/docker-compose.yml -p $APP_NAME stop
+      - docker compose -f .deploy/docker-compose.yml -p $APP_NAME rm -f
+      - docker compose -f .deploy/docker-compose.yml -p $APP_NAME pull
+      - docker compose -f .deploy/docker-compose.yml -p $APP_NAME up -d
+    volumes:
+    - name: docker_data
+      path: /var/lib/docker
+    - name: docker_socket
+      path: /var/run/docker.sock
+    environment:
+      DOCKER_USERNAME:
+        from_secret: DOCKER_USERNAME
+      DOCKER_PASSWORD:
+        from_secret: DOCKER_PASSWORD
+      APP_NAME: ${DRONE_REPO_NAME,,}
+      APP_PORT:
+        from_secret: APP_PORT
+      APP_SECRET:
+        from_secret: APP_SECRET
+      APP_MYSQL_HOST: 202.117.3.45
+      APP_MYSQL_PORT: 3306
+      # APP_MYSQL_NAME: ${DRONE_REPO_NAME,,}
+      # APP_MYSQL_USER: ${DRONE_REPO_NAME,,}
+      APP_MYSQL_NAME:
+        from_secret: APP_MYSQL_NAME
+      APP_MYSQL_USER:
+        from_secret: APP_MYSQL_USER
+      APP_MYSQL_PASS:
+        from_secret: APP_MYSQL_PASS
+      ALIBABA_CLOUD_ACCESS_KEY_ID:
+        from_secret: ALIBABA_CLOUD_ACCESS_KEY_ID
+      ALIBABA_CLOUD_ACCESS_KEY_SECRET:
+        from_secret: ALIBABA_CLOUD_ACCESS_KEY_SECRET
+      APP_ID:
+        from_secret: APP_ID
+      MINI_APP_SECRET:
+        from_secret: MINI_APP_SECRET
+    when:
+      ref:
+        - refs/tags/*+deploy
+        - refs/tags/*+release
+
+volumes:
+- name: docker_data
+  host:
+    path: /var/lib/docker
+- name: docker_socket
+  host:
+    path: /var/run/docker.sock
+- name: go_pkg
+  host:
+    path: /tz-slaver-data/app_cache/go
+
+trigger:
+  event:
+  - tag
