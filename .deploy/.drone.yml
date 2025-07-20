@@ -4,7 +4,7 @@ name: build
 
 steps:
   - name: build
-    image: docker.1panel.live/library/golang:alpine
+    image: golang:alpine
     commands:
       - go env -w GO111MODULE=on
       - go env -w GOPROXY=https://goproxy.cn,direct
