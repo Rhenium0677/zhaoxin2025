@@ -53,9 +53,9 @@ func init() {
 
 	DB = db
 
-	if !config.Config.AppProd {
-		initModel()
-	}
+	// if !config.Config.AppProd {
+	initModel()
+	// }
 
 }
 
