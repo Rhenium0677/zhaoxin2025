@@ -46,7 +46,7 @@ func (*Stu) Login(c *gin.Context) {
 	// 登录成功，设置用户session
 	SessionSet(c, "user-session", UserSession{
 		NetID:    netid,
-		Username: username,
+		Username: record.OpenID,
 		Level:    1, // 学生level默认为1
 	})
 	// 返回成功响应
