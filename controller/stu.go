@@ -35,10 +35,18 @@ func (*Stu) Login(c *gin.Context) {
 		c.Error(err)
 		return
 	}
+	var netid string
+	if record.OpenID != record.NetID {
+		netid = record.NetID
+	} else {
+		netid = record.OpenID
+	}
+	// 检查 netid 与 openid 是否相等
+	// 不相等则说明 netid 已更新，可以直接使用
 	// 登录成功，设置用户session
 	SessionSet(c, "user-session", UserSession{
-		NetID:    "",
-		Username: record.OpenID,
+		NetID:    netid,
+		Username: username,
 		Level:    1, // 学生level默认为1
 	})
 	// 返回成功响应
