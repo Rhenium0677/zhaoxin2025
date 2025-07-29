@@ -86,7 +86,7 @@ func (*Stu) Update(c *gin.Context) {
 		Mastered string           `json:"mastered" binding:"required"`
 		ToMaster string           `json:"tomaster" binding:"required"`
 		Depart   model.Department `json:"depart" binding:"required,oneof=tech video art none"`
-		Work     string           `json:"work" binding:"required"`
+		Work     string           `json:"work" binding:"omitempty"`
 	}
 	// 绑定并验证请求参数
 	if err := c.ShouldBind(&info); err != nil {
