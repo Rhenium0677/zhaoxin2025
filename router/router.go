@@ -49,8 +49,8 @@ func InitRouter(r *gin.Engine) {
 		{
 			intervRouter.GET("/que", ctr.Interv.GetQue)
 
-			intervRouter.POST("/", ctr.Interv.New)
 			intervRouter.Use(middleware.CheckRole(2))
+			intervRouter.POST("/", ctr.Interv.New)
 			intervRouter.GET("/", ctr.Interv.Get)
 			intervRouter.POST("/create", ctr.Interv.Create)
 			intervRouter.DELETE("/", ctr.Interv.Delete)
@@ -63,7 +63,7 @@ func InitRouter(r *gin.Engine) {
 		{
 			queRouter.GET("/", ctr.Que.Get)
 
-			queRouter.Use(middleware.CheckRole(1))
+			queRouter.Use(middleware.CheckRole(2))
 			queRouter.POST("/", ctr.Que.New)
 			queRouter.DELETE("/", ctr.Que.Delete)
 			queRouter.PUT("/", ctr.Que.Update)
