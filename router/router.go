@@ -17,7 +17,8 @@ func InitRouter(r *gin.Engine) {
 		{
 			adminRouter.POST("/", ctr.Admin.Login)
 			adminRouter.DELETE("/", ctr.Admin.Logout)
-
+			adminRouter.POST("/register", ctr.Admin.Register)
+			
 			adminRouter.Use(middleware.CheckRole(2))
 			adminRouter.PUT("/", ctr.Admin.Update)
 			adminRouter.GET("/stu", ctr.Admin.GetStu)
@@ -25,9 +26,8 @@ func InitRouter(r *gin.Engine) {
 			adminRouter.GET("/excel", ctr.Admin.Excelize)
 			adminRouter.GET("/stat", ctr.Admin.Stat)
 			adminRouter.GET("/aliyun", ctr.Admin.AliyunSendMsg)
-
+			
 			adminRouter.Use(middleware.CheckRole(3))
-			adminRouter.POST("/register", ctr.Admin.Register)
 			adminRouter.POST("/settime", ctr.Admin.SetTime)
 			adminRouter.GET("/send", ctr.Admin.SendResultMessage)
 		}
