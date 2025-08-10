@@ -131,7 +131,7 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 		}
 	}
 	if time.Now().After(record.Time) {
-		return common.ErrNew(errors.New("面试时间已过"))
+		return common.ErrNew(errors.New("面试时间已过"), common.OpErr)
 	}
 	// 检查面试记录是否已经被预约
 	if record.NetID != nil && *record.NetID != "" {
@@ -177,7 +177,7 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 		}
 	}
 	if time.Now().After(record.Time) {
-		return common.ErrNew(errors.New("面试时间已过"))
+		return common.ErrNew(errors.New("面试时间已过"), common.OpErr)
 	}
 	// 检查面试记录是否属于该学生
 	if record.NetID == nil && *record.NetID != netid {
