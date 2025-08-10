@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/robfig/cron/v3"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 	"zhaoxin2025/model"
@@ -62,6 +63,10 @@ func (q *Queue) ConsumeMessage(handler func(model.Stu) error) {
 		defer q.wg.Done()          // 协程退出时减少等待组计数
 		for msg := range q.Queue { // 循环从 channel 中接收消息，直到 channel 关闭
 			if err := handler(msg); err != nil {
+				logrus.WithFields(logrus.Fields{
+					"openID": msg.OpenID,
+					"error":  err,
+				}).Error("Consumer: Failed to process message")
 				fmt.Printf("Consumer: Failed to process message OpenID: %s, error: %v\n", msg.OpenID, err)
 			}
 			fmt.Printf("Consumer: Processed message OpenID: %s\n", msg.OpenID)
