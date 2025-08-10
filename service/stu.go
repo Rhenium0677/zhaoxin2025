@@ -134,8 +134,11 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 		return common.ErrNew(errors.New("面试时间已过"), common.OpErr)
 	}
 	// 检查面试记录是否已经被预约
-	if record.NetID != nil && *record.NetID != "" {
+	if record.NetID != nil && *record.NetID != netid {
 		return common.ErrNew(errors.New("该面试已经被预约"), common.AuthErr)
+	}
+	if record.NetID != nil && *record.NetID == netid {
+		return nil
 	}
 	// 更新学生的面试记录
 	var stu model.Stu
