@@ -88,7 +88,7 @@ func (*Stu) UpdateMessage(netid string, message int) error {
 func (*Stu) GetIntervDate() (map[string]int, error) {
 	// 查询可用的面试日期
 	var record []model.Interv
-	if err := model.DB.Model(&model.Interv{}).Where("netid IS NULL").Find(&record).Error; err != nil {
+	if err := model.DB.Model(&model.Interv{}).Where("netid IS NULL").Where("time > ?", time.Now()).Find(&record).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询可用面试日期失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
@@ -100,12 +100,12 @@ func (*Stu) GetIntervDate() (map[string]int, error) {
 	return IntervDate, nil
 }
 
-// GetInterv 查询某日可用与不可用面试记录
+// GetInterv 查询某日可用面试记录
 func (*Stu) GetInterv(date time.Time) ([]model.Interv, error) {
 	// 查询学生的面试记录
 	var data []model.Interv
 	timeRange := DayRange(date)
-	if err := model.DB.Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Find(&data).Error; err != nil {
+	if err := model.DB.Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Where("time > ?", time.Now()).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询学生面试记录失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
@@ -124,11 +124,14 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
+	// 检查是否在不可预约时间段内
 	for timeRange, _ := range BlockTable {
 		if record.Time.After(timeRange.Start) && record.Time.Before(timeRange.End) {
-			// 检查是否在不可预约时间段内
 			return common.ErrNew(errors.New("当前面试信息无法修改"), common.AuthErr)
 		}
+	}
+	if time.Now().After(record.Time) {
+		return common.ErrNew(errors.New("面试时间已过"))
 	}
 	// 检查面试记录是否已经被预约
 	if record.NetID != nil && *record.NetID != "" {
@@ -167,11 +170,14 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
+	// 检查是否在不可预约时间段内
 	for timeRange, _ := range BlockTable {
 		if record.Time.After(timeRange.Start) && record.Time.Before(timeRange.End) {
-			// 检查是否在不可预约时间段内
 			return common.ErrNew(errors.New("当前面试信息无法修改"), common.AuthErr)
 		}
+	}
+	if time.Now().After(record.Time) {
+		return common.ErrNew(errors.New("面试时间已过"))
 	}
 	// 检查面试记录是否属于该学生
 	if record.NetID == nil && *record.NetID != netid {
