@@ -3,10 +3,10 @@ package service
 import (
 	"fmt"
 	"github.com/robfig/cron/v3"
-	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 	"zhaoxin2025/model"
+	"zhaoxin2025/logger"
 )
 
 // RefreshAccessToken 是由 cron 调度的函数，用于刷新 AccessToken。
@@ -17,6 +17,7 @@ func RefreshAccessToken() {
 	err := GetAccessToken()
 	if err != nil {
 		// 如果刷新失败
+		logger.DatabaseLogger.Errorf("[Cron] 刷新 AccessToken 失败: %v", err)
 		println("定时任务: 刷新 AccessToken 失败。将在 5 分钟后重试。", err)
 
 		// 启动一个 goroutine，在 5 分钟后重试
@@ -63,10 +64,7 @@ func (q *Queue) ConsumeMessage(handler func(model.Stu) error) {
 		defer q.wg.Done()          // 协程退出时减少等待组计数
 		for msg := range q.Queue { // 循环从 channel 中接收消息，直到 channel 关闭
 			if err := handler(msg); err != nil {
-				logrus.WithFields(logrus.Fields{
-					"openID": msg.OpenID,
-					"error":  err,
-				}).Error("Consumer: Failed to process message")
+				logger.DatabaseLogger.Errorf("[Cron] 消费者发送信息失败: OpenID: %s, error: %v", msg.OpenID, err)
 				fmt.Printf("Consumer: Failed to process message OpenID: %s, error: %v\n", msg.OpenID, err)
 			}
 			fmt.Printf("Consumer: Processed message OpenID: %s\n", msg.OpenID)
@@ -77,6 +75,9 @@ func (q *Queue) ConsumeMessage(handler func(model.Stu) error) {
 
 // Send 是由 cron 调度的函数，用于获取和发送订阅消息。
 func Send() {
+	TimeQueue.ConsumeMessage(SendTime)
+	ResultQueue.ConsumeMessage(SendResult)
+	RegisterQueue.ConsumeMessage(SendRegister)
 	go func() {
 		c := cron.New(cron.WithChain(
 			cron.SkipIfStillRunning(cron.DefaultLogger),
@@ -130,7 +131,4 @@ func Send() {
 		}
 		c.Start()
 	}()
-	TimeQueue.ConsumeMessage(SendTime)
-	ResultQueue.ConsumeMessage(SendResult)
-	RegisterQueue.ConsumeMessage(SendRegister)
 }
