@@ -20,7 +20,7 @@ var Config struct {
 	AllowHeaders                string
 	LogLevel                    string
 	AppSalt                     string
-	TemplateID                  string
+	TemplateID                  []string
 	AlibabaCloudAccessKeyID     string
 	AlibabaCloudAccessKeySecret string
 }
@@ -52,7 +52,7 @@ func initConfig() {
 	Config.AllowHeaders = envOr("APP_ALLOW_HEADERS", "Origin|Content-Length|Content-Type|Authorization")
 	Config.LogLevel = envOr("APP_LOG_LEVEL", "info")
 	Config.AppSalt = envOr("APP_SALT", "saltwithlength16")
-	Config.TemplateID = envOr("APP_TEMPLATE_ID", "wx1234567890")
+	Config.TemplateID = strings.Split(envOr("APP_TEMPLATE_ID", "wx1234567890"), ",")
 	Config.AlibabaCloudAccessKeyID = envOr("ALIBABA_ACCESS_KEY_ID", "123456")
 	Config.AlibabaCloudAccessKeySecret = envOr("ALIBABA_ACCESS_KEY_SECRET", "123456")
 }

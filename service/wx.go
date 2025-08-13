@@ -131,7 +131,7 @@ func WxLogin(code string) (string, string, error) {
 	return wxResp.OpenID, wxResp.SessionKey, nil
 }
 
-func SendMessage(openid string, data any) error {
+func SendMessage(openid string, template_id string, data any) error {
 	// 创建 HTTP 客户端
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -148,7 +148,7 @@ func SendMessage(openid string, data any) error {
 
 	// 创建请求体
 	message := WxMessage{
-		TemplateID:       config.Config.TemplateID,
+		TemplateID:       template_id,
 		Page:             "",
 		OpenID:           openid,
 		MiniProgramState: "developer",
@@ -193,7 +193,7 @@ func SendMessage(openid string, data any) error {
 }
 
 func SendRegister(record model.Stu) error {
-	if err := SendMessage(record.OpenID, RegisterMessage{
+	if err := SendMessage(record.OpenID, config.Config.TemplateID[0], RegisterMessage{
 		Name:   Field{record.Name},
 		ReType: Field{string(record.Depart)},
 		Interv: Field{Pass(record.Interv.Pass)},
@@ -205,21 +205,21 @@ func SendRegister(record model.Stu) error {
 	return nil
 }
 
-func SendTime(stu model.Stu) error {
-	if err := SendMessage(stu.OpenID, IntervTimeMessage{
-		Time: Field{Value: stu.Interv.Time.Format("2006年01月02日 15:04:05")},
-		Site: Field{Value: "挑战阁楼"},
-		Note: Field{Value: "请您按时参加面试，特殊情况请联系管理员"},
+func SendResult(stu model.Stu) error {
+	if err := SendMessage(stu.OpenID, config.Config.TemplateID[1], IntervResMessage{
+		Phrase: Field{Value: Pass(stu.Interv.Pass)},
+		Thing:  Field{Value: "点击即可查看详细信息，挑战，无处不在！"},
 	}); err != nil {
 		return fmt.Errorf("发送订阅消息失败: %w", err)
 	}
 	return nil
 }
 
-func SendResult(stu model.Stu) error {
-	if err := SendMessage(stu.OpenID, IntervResMessage{
-		Phrase: Field{Value: Pass(stu.Interv.Pass)},
-		Thing:  Field{Value: "点击即可查看详细信息，挑战，无处不在！"},
+func SendTime(stu model.Stu) error {
+	if err := SendMessage(stu.OpenID, config.Config.TemplateID[2], IntervTimeMessage{
+		Time: Field{Value: stu.Interv.Time.Format("2006年01月02日 15:04:05")},
+		Site: Field{Value: "挑战阁楼"},
+		Note: Field{Value: "请您按时参加面试，特殊情况请联系管理员"},
 	}); err != nil {
 		return fmt.Errorf("发送订阅消息失败: %w", err)
 	}
