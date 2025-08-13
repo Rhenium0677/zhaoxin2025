@@ -136,19 +136,18 @@ func SendMessage(openid string, data any) error {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-
-	// 基础 URL
-	baseURL := "https://api.weixin.qq.com/cgi-bin/message/subscribe/send"
-
+	
 	if AccessToken.IsExpired() {
 		if err := GetAccessToken(); err != nil {
 			return fmt.Errorf("获取AccessToken失败: %w", err)
 		}
 	}
+	
+	// 基础 URL
+	baseURL := fmt.Sprintf("https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=%s", AccessToken.AccessToken)
 
 	// 创建请求体
 	message := WxMessage{
-		AccessToken:      AccessToken.AccessToken,
 		TemplateID:       config.Config.TemplateID,
 		Page:             "",
 		OpenID:           openid,
