@@ -90,15 +90,15 @@ func (*Admin) Update(c *gin.Context) {
 // GetStu 筛选并获取学生信息
 func (*Admin) GetStu(c *gin.Context) {
 	var info struct {
-		NetID       string           `json:"netid" binding:"omitempty,len=10,numeric"`
-		Name        string           `json:"name" binding:"omitempty"`
-		Phone       string           `json:"phone" binding:"omitempty,len=11,numeric"`
-		School      string           `json:"school" binding:"omitempty"`
-		First       model.Department `json:"first" binding:"omitempty,oneof=tech video art none"`
-		Second      model.Department `json:"second" binding:"omitempty,oneof=tech video art none"`
-		Pass        int              `json:"pass" binding:"omitempty,oneof=0 1"`
-		Interviewer string           `json:"interviewer" binding:"omitempty"`
-		Star        int              `json:"star" binding:"omitempty"`
+		NetID       string           `form:"netid" binding:"omitempty,len=10,numeric"`
+		Name        string           `form:"name" binding:"omitempty"`
+		Phone       string           `form:"phone" binding:"omitempty,len=11,numeric"`
+		School      string           `form:"school" binding:"omitempty"`
+		First       model.Department `form:"first" binding:"omitempty,oneof=tech video art none"`
+		Second      model.Department `form:"second" binding:"omitempty,oneof=tech video art none"`
+		Pass        int              `form:"pass" binding:"omitempty,oneof=0 1"`
+		Interviewer string           `form:"interviewer" binding:"omitempty"`
+		Star        int              `form:"star" binding:"omitempty"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
