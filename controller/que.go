@@ -73,6 +73,39 @@ func (*Que) New(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
+
+// NewData 上传图片、视频等文件
+func (*Que) NewData(c *gin.Context) {
+	// 从表单中获取文件
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+
+	// 为文件生成一个唯一的新文件名
+	// 结合时间戳和原始文件名可以有效避免冲突
+	filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), filepath.Base(file.Filename))
+
+	// 拼接文件的完整保存路径
+	dst := filepath.Join("./data/", filename)
+
+	// 将文件保存到本地
+	if err := c.SaveUploadedFile(file, dst); err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
+
+	// 构造一个可访问的 URL 路径，并返回给前端
+	fileURL := fmt.Sprintf("/data/%s", filename)
+
+	c.JSON(http.StatusOK, ResponseNew(c, struct {
+		URL string `json:"url"`
+	}{
+		URL: fileURL,
+	}))
+}
+
 // Delete 删除问题
 // 根据提供的问题ID列表删除相应的问题记录
 func (*Que) Delete(c *gin.Context) {

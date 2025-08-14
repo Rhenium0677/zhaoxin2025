@@ -9,6 +9,7 @@ import (
 func InitRouter(r *gin.Engine) {
 	r.Use(middleware.Error)
 	r.Use(middleware.GinLogger(), middleware.GinRecovery(true))
+	r.Static("/data", "./data")
 	apiRouter := r.Group("/api")
 	apiRouter.GET("/", ctr.LogStatus)
 	apiRouter.GET("/session", ctr.RefreshSession, middleware.CheckRole(1))
@@ -65,6 +66,7 @@ func InitRouter(r *gin.Engine) {
 
 			queRouter.Use(middleware.CheckRole(2))
 			queRouter.POST("/", ctr.Que.New)
+			queRouter.POST("/data", ctr.Que.NewData)
 			queRouter.DELETE("/", ctr.Que.Delete)
 			queRouter.PUT("/", ctr.Que.Update)
 			queRouter.PUT("/lucky", ctr.Que.LuckyDog)
