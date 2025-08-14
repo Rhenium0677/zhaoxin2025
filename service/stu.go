@@ -17,7 +17,7 @@ type Stu struct{}
 // 通过微信code获取openid，查询或创建学生记录，并校验openid
 func (*Stu) Login(code string) (bool, model.Stu, error) {
 	// 调用微信登录接口获取用户信息
-	_, openid, err := WxLogin(code)
+	openid, _, err := WxLogin(code)
 	//openid := "just for test remember to modify these lines"
 	if err != nil {
 		return false, model.Stu{}, common.ErrNew(err, common.AuthErr)

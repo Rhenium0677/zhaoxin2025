@@ -125,6 +125,8 @@ func WxLogin(code string) (string, string, error) {
 	// 检查响应是否包含错误
 	if wxResp.ErrCode != 0 {
 		return "", "", fmt.Errorf("微信API错误: %d - %s", wxResp.ErrCode, wxResp.ErrMsg)
+	} else if wxResp.OpenID == "" {
+		return "", "", fmt.Errorf("微信API错误: 返回 openid 值为空")
 	}
 
 	// 返回 openid 和 session_key
