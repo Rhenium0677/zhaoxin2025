@@ -173,7 +173,7 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 	id := r.Intn(len(data))
 	tx := model.DB.Begin()
 	if err := tx.Model(&model.Stu{}).Where("netid = ?", netid).
-		Update("que_id", data[id].ID).Error; err != nil {
+		Update("queid", data[id].ID).Error; err != nil {
 		tx.Rollback()
 		logger.DatabaseLogger.Errorf("更新学生问题ID失败: %v", err)
 		return model.Que{}, common.ErrNew(err, common.SysErr)
