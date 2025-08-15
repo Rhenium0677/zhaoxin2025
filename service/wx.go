@@ -29,7 +29,7 @@ type WxMessage struct {
 	OpenID           string `json:"touser"`
 	MiniProgramState string `json:"miniprogram_state"`
 	Lang             string `json:"lang"`
-	Data             any
+	Data             any    `json:"data"`
 }
 
 type RegisterMessage struct {
@@ -47,8 +47,8 @@ type IntervTimeMessage struct {
 }
 
 type IntervResMessage struct {
-	Phrase Field `json:"phrase01"`
-	Thing  Field `json:"thing01"`
+	Phrase Field `json:"phrase1"`
+	Thing  Field `json:"thing5"`
 }
 
 type Field struct {
@@ -200,7 +200,7 @@ func SendRegister(record model.Stu) error {
 		ReType: Field{string(record.Depart)},
 		Interv: Field{Pass(record.Interv.Pass)},
 		Time:   Field{Time(record.Interv.Time)},
-		Note:   Field{"欢迎报名挑战网招新面试，期待你的如约而至！"},
+		Note:   Field{"欢迎报名挑战网面试，期待你的如约而至！"},
 	}); err != nil {
 		return fmt.Errorf("发送订阅消息失败: %w", err)
 	}
