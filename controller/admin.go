@@ -309,7 +309,6 @@ func (*Admin) DownloadLog(c *gin.Context) {
 	}
 
 	// 4. 使用 c.File() 发送文件
-	// Gin 会自动处理文件流和 Content-Disposition 头，
-	// 使得浏览器能正确地下载文件而不是直接打开
+	c.Header("Content-Disposition", "attachment; filename="+filename)
 	c.File(filePath)
 }
