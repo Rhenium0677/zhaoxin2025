@@ -143,10 +143,9 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 			return common.ErrNew(errors.New("预约面试失败，请稍后再试"), common.SysErr)
 		}
 		if stu.Message%2 == 1 {
-			err := SendRegister(stu)
-			logger.GinLogger.Infof("尝试添加订阅消息, openid: %s", stu.OpenID)
-			if err != nil {
-				logger.GinLogger.Errorf("添加订阅消息失败: %v", err)
+			logger.GinLogger.Infof("尝试为 %s 发送订阅消息", stu.OpenID)
+			if err := SendRegister(stu); err != nil {
+				logger.GinLogger.Errorf("发送订阅消息失败: %v", err)
 			}
 		}
 		// 更新成功
