@@ -83,7 +83,7 @@ func Send() {
 			cron.Recover(cron.DefaultLogger),
 		))
 		// 每10分钟执行一次，获取需要发送的订阅消息
-		if _, err := c.AddFunc("@every 1m", func() {
+		if _, err := c.AddFunc("@every 10m", func() {
 			var record []model.Stu
 			if err := model.DB.Model(&model.Stu{}).Where("message > 0").Preload("Interv").Find(&record).Error; err != nil {
 				logger.GinLogger.Errorf("[Cron] 查询学生信息失败: %v\n", err)
