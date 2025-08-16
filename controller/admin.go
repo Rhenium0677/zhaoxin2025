@@ -285,16 +285,22 @@ func (*Admin) Log(c *gin.Context) {
 }
 
 func (*Admin) DownloadLog(c *gin.Context) {
-	// 1. 从URL参数中获取文件名
-	filename := c.Param("filename")
-	if filename == "" {
+	var info struct {
+		Filename string `form:"filename" binding:"required"`
+	}
+	// 1. 从query参数中获取文件名
+	if err := c.ShouldBindQuery(&info); err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	if info.Filename == "" {
 		c.Error(common.ErrNew(errors.New("文件名不能为空"), common.ParamErr))
 		return
 	}
 
 	// 2. 构建文件的完整路径
 	// 确保文件路径是安全的，防止目录遍历攻击 (Directory Traversal Attack)
-	filePath := filepath.Join(".", "log", filename)
+	filePath := filepath.Join(".", "log", info.Filename)
 
 	// 3. 检查文件是否存在
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {

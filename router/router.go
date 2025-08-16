@@ -28,7 +28,7 @@ func InitRouter(r *gin.Engine) {
 			adminRouter.GET("/stat", ctr.Admin.Stat)
 			adminRouter.GET("/aliyun", ctr.Admin.AliyunSendMsg)
 			adminRouter.GET("/log", ctr.Admin.Log)
-			adminRouter.GET("/getlog:filename", ctr.Admin.DownloadLog)
+			adminRouter.GET("/getlog", ctr.Admin.DownloadLog)
 			
 			adminRouter.Use(middleware.CheckRole(3))
 			adminRouter.POST("/settime", ctr.Admin.SetTime)
