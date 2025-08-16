@@ -309,6 +309,6 @@ func (*Admin) DownloadLog(c *gin.Context) {
 	}
 
 	// 4. 使用 c.File() 发送文件
-	c.Header("Content-Disposition", "attachment; filename="+filename)
+	c.Header("Content-Disposition", "attachment; filename="+info.Filename)
 	c.File(filePath)
 }
