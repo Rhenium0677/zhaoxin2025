@@ -283,3 +283,27 @@ func (*Admin) Log(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, ResponseNew(c, filenames))
 }
+
+func (*Admin) DownloadLog(c *gin.Context) {
+	// 1. 从URL参数中获取文件名
+	filename := c.Param("filename")
+	if filename == "" {
+		c.Error(common.ErrNew(errors.New("文件名不能为空"), common.ParamErr))
+		return
+	}
+
+	// 2. 构建文件的完整路径
+	// 确保文件路径是安全的，防止目录遍历攻击 (Directory Traversal Attack)
+	filePath := filepath.Join(".", "log", filename)
+
+	// 3. 检查文件是否存在
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		c.Error(common.ErrNew(errors.New("文件不存在"), common.OpErr))
+		return
+	}
+
+	// 4. 使用 c.File() 发送文件
+	// Gin 会自动处理文件流和 Content-Disposition 头，
+	// 使得浏览器能正确地下载文件而不是直接打开
+	c.File(filePath)
+}
