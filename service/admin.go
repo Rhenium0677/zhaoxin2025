@@ -171,7 +171,7 @@ func (*Admin) SendResultMessage() error {
 		if stu.Message <= 4 {
 			continue
 		}
-		err := ResultQueue.AddMessage(stu)
+		err := SendResult(stu)
 		if err != nil {
 			println("添加面试结果订阅消息失败: %v，学生netid: %s", err, stu.NetID)
 		}
