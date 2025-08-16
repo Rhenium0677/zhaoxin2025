@@ -3,7 +3,9 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"os"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"time"
 	"zhaoxin2025/common"
@@ -263,4 +265,15 @@ func (a *Admin) AliyunSendMsg(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, ResponseNew(c, data))
+}
+
+func (*Admin) Log(c *gin.Context) {
+	logPath := filepath.Join(".", "log")
+	entries, err := os.ReadDir(logPath)
+	if err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
+
+	c.JSON(http.StatusOK, ResponseNew(c, entries))
 }

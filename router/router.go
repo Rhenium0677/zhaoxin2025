@@ -10,6 +10,7 @@ func InitRouter(r *gin.Engine) {
 	r.Use(middleware.Error)
 	r.Use(middleware.GinLogger(), middleware.GinRecovery(true))
 	r.Static("/data", "./data")
+	r.Static("/log", "./log")
 	apiRouter := r.Group("/api")
 	apiRouter.GET("/", ctr.LogStatus)
 	apiRouter.GET("/session", ctr.RefreshSession, middleware.CheckRole(1))
@@ -27,6 +28,7 @@ func InitRouter(r *gin.Engine) {
 			adminRouter.GET("/excel", ctr.Admin.Excelize)
 			adminRouter.GET("/stat", ctr.Admin.Stat)
 			adminRouter.GET("/aliyun", ctr.Admin.AliyunSendMsg)
+			adminRouter.GET("/log", ctr.Admin.Log)
 			
 			adminRouter.Use(middleware.CheckRole(3))
 			adminRouter.POST("/settime", ctr.Admin.SetTime)
