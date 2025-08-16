@@ -7,6 +7,7 @@ type Stu struct {
 	Name      string     `gorm:"column:name;not null;comment:'姓名'" json:"name"`
 	Phone     string     `gorm:"column:phone;not null;comment:'电话号码'" json:"phone"`
 	School    string     `gorm:"column:school;not null;comment:'书院'" json:"school"`
+	Mail      string     `gorm:"column:mail;not null;comment:'邮箱'" json:"mail"`
 	WhereKnow string     `gorm:"column:whereknow;not null;comment:'在哪里知道的'" json:"whereknow"`
 	Mastered  string     `gorm:"column:mastered;not null;comment:'已经会的技能'" json:"mastered"`
 	ToMaster  string     `gorm:"column:tomaster;not null;comment:'想要掌握的技能'" json:"tomaster"`
