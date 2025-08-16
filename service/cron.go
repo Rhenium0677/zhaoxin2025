@@ -5,8 +5,8 @@ import (
 	"github.com/robfig/cron/v3"
 	// "sync"
 	"time"
-	"zhaoxin2025/model"
 	"zhaoxin2025/logger"
+	"zhaoxin2025/model"
 )
 
 // RefreshAccessToken 是由 cron 调度的函数，用于刷新 AccessToken。
@@ -17,7 +17,7 @@ func RefreshAccessToken() {
 	err := GetAccessToken()
 	if err != nil {
 		// 如果刷新失败
-		logger.DatabaseLogger.Errorf("[Cron] 刷新 AccessToken 失败: %v", err)
+		logger.GinLogger.Errorf("[Cron] 刷新 AccessToken 失败: %v", err)
 
 		// 启动一个 goroutine，在 5 分钟后重试
 		go func() {
@@ -25,7 +25,7 @@ func RefreshAccessToken() {
 			fmt.Println("重试任务: 5 分钟后尝试刷新 AccessToken... ")
 			err := GetAccessToken()
 			if err != nil {
-				logger.DatabaseLogger.Errorf("重试任务: 刷新 AccessToken 仍然失败: %v\n", err)
+				logger.GinLogger.Errorf("重试任务: 刷新 AccessToken 仍然失败: %v\n", err)
 			} else {
 				fmt.Println("重试任务: AccessToken 刷新成功。")
 			}
@@ -34,7 +34,7 @@ func RefreshAccessToken() {
 	}
 
 	// 如果刷新成功
-	logger.DatabaseLogger.Infof("定时任务: AccessToken 刷新成功。")
+	logger.GinLogger.Infof("定时任务: AccessToken 刷新成功。")
 }
 
 // type Queue struct {
@@ -50,10 +50,10 @@ func RefreshAccessToken() {
 // func (q *Queue) AddMessage(stu model.Stu) error {
 // 	select {
 // 	case q.Queue <- stu: // 尝试将消息发送到 channel
-// 		logger.DatabaseLogger.Infof("[Cron] Producer published message for %s\n", stu.OpenID)
+// 		logger.GinLogger.Infof("[Cron] Producer published message for %s\n", stu.OpenID)
 // 		return nil
 // 	case <-time.After(time.Second): // 如果1秒内无法发送（队列已满），则超时
-// 		logger.DatabaseLogger.Errorf("[Cron] Producer failed to publish message for %s\n", stu.OpenID)
+// 		logger.GinLogger.Errorf("[Cron] Producer failed to publish message for %s\n", stu.OpenID)
 // 		return fmt.Errorf("producer: queue is full, failed to publish message NetID: %s", stu.OpenID)
 // 	}
 // }
@@ -64,11 +64,11 @@ func RefreshAccessToken() {
 // 		defer q.wg.Done()          // 协程退出时减少等待组计数
 // 		for msg := range q.Queue { // 循环从 channel 中接收消息，直到 channel 关闭
 // 			if err := handler(msg); err != nil {
-// 				logger.DatabaseLogger.Errorf("[Cron] Consumer failed to process message for %s, error: %v\n", msg.OpenID, err)
+// 				logger.GinLogger.Errorf("[Cron] Consumer failed to process message for %s, error: %v\n", msg.OpenID, err)
 // 			}
-// 			logger.DatabaseLogger.Infof("[Cron] Consumer processed message for %s", msg.OpenID)
+// 			logger.GinLogger.Infof("[Cron] Consumer processed message for %s", msg.OpenID)
 // 		}
-// 		logger.DatabaseLogger.Errorf("[Cron] Consumer: Finished processing messages\n")
+// 		logger.GinLogger.Errorf("[Cron] Consumer: Finished processing messages\n")
 // 	}()
 // }
 
@@ -83,24 +83,24 @@ func Send() {
 			cron.Recover(cron.DefaultLogger),
 		))
 		// 每10分钟执行一次，获取需要发送的订阅消息
-		if _, err := c.AddFunc("@every 10m", func() {
+		if _, err := c.AddFunc("@every 1m", func() {
 			var record []model.Stu
 			if err := model.DB.Model(&model.Stu{}).Where("message > 0").Preload("Interv").Find(&record).Error; err != nil {
-				logger.DatabaseLogger.Errorf("[Cron] 查询学生信息失败: %v\n", err)
+				logger.GinLogger.Errorf("[Cron] 查询学生信息失败: %v\n", err)
 				return
 			}
 			for _, stu := range record {
-				message := stu.Message
-				if (message<<1)&1 == 1 && time.Now().Add(20*time.Minute).Before(stu.Interv.Time) && time.Now().Add(30*time.Minute).After(stu.Interv.Time) {
-					logger.DatabaseLogger.Infof("[Cron] 正在为 %s 发送面试时间通知", stu.OpenID)
-					err := SendTime(stu)
-					if err != nil {
-						logger.DatabaseLogger.Errorf("[Cron] 添加面试时间订阅消息失败: %v\n", err)
-					}
+				//message := stu.Message
+				err := SendTime(stu)
+				logger.GinLogger.Infof("[Cron] 正在为 %s 发送面试时间通知", stu.OpenID)
+				if err != nil {
+					logger.GinLogger.Errorf("[Cron] 添加面试时间订阅消息失败: %v\n", err)
 				}
+				//if (message<<1)&1 == 1 && time.Now().Add(20*time.Minute).Before(stu.Interv.Time) && time.Now().Add(30*time.Minute).After(stu.Interv.Time) {
+				//}
 			}
 		}); err != nil {
-			logger.DatabaseLogger.Errorf("[Cron] 添加定时任务失败: %v\n", err)
+			logger.GinLogger.Errorf("[Cron] 添加定时任务失败: %v\n", err)
 		}
 		c.Start()
 	}()
@@ -113,16 +113,16 @@ func Send() {
 		if _, err := c.AddFunc("@every 10m", func() {
 			fd, err := AliyunSendItvTimeMsg()
 			if err != nil {
-				logger.DatabaseLogger.Errorf("[Cron] 获取面试时间短信消息失败: %v\n", err)
+				logger.GinLogger.Errorf("[Cron] 获取面试时间短信消息失败: %v\n", err)
 				return
 			}
 			for _, f := range fd {
 				if f.ErrCode != 0 {
-					logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信消息失败, NetID: %s, ErrCode: %d\n", f.NetID, f.ErrCode)
+					logger.GinLogger.Errorf("[Cron] 发送面试时间短信消息失败, NetID: %s, ErrCode: %d\n", f.NetID, f.ErrCode)
 				}
 			}
 		}); err != nil {
-			logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信任务失败: %v\n", err)
+			logger.GinLogger.Errorf("[Cron] 发送面试时间短信任务失败: %v\n", err)
 		}
 		c.Start()
 	}()

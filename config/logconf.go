@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"zhaoxin2025/logger"
 	"time"
+	"zhaoxin2025/logger"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -115,6 +115,9 @@ func createLogger(logFilePrefix, logOutputDir string, config LogConfig) *logrus.
 				ForceColors:     true,
 				FullTimestamp:   true,
 				TimestampFormat: config.TimeFormat,
+				DisableQuote:    true,
+				DisableSorting:  true,
+				//PadLevelText:    false,
 			},
 		},
 	)
