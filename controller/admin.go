@@ -274,6 +274,11 @@ func (*Admin) Log(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
-
-	c.JSON(http.StatusOK, ResponseNew(c, entries))
+	for _, entry := range entries {
+		// 仅处理文件，忽略子目录
+		if !entry.IsDir() {
+			filenames = append(filenames, entry.Name())
+		}
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, filenames))
 }
