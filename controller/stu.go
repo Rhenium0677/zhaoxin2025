@@ -22,15 +22,41 @@ type Stu struct{}
 // 接收学生NetID和微信code，进行登录验证并设置session
 func (*Stu) Login(c *gin.Context) {
 	var info struct {
-		Code string `json:"code" binding:"required"`
+		Code string `json:"code" binding:"omitempty"`
 	}
 	// 绑定并验证请求参数
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
+	openid := ""
+	// 检查是否提供了code
+	if sessionData := SessionGet(c, "user-session"); sessionData != nil {
+		userSession, ok := sessionData.(UserSession)
+		if !ok {
+			c.Error(common.ErrNew(errors.New("读取session失败"), common.SysErr))
+			return
+		}
+		openid = userSession.Username // 从session中获取openid
+	} else if info.Code != "" {
+		// 调用微信登录接口获取用户信息
+		var err error
+		openid, _, err = service.WxLogin(info.Code)
+		//openid := "just for test remember to modify these lines"
+		if err != nil {
+			c.Error(common.ErrNew(err, common.SysErr))
+			return
+		}
+		if openid == "" {
+			c.Error(common.ErrNew(errors.New("获取openid失败"), common.AuthErr))
+			return
+		}
+	} else {
+		c.Error(common.ErrNew(errors.New("既未登录也未传入code"), common.ParamErr))
+		return
+	}
 	// 调用服务层处理登录逻辑
-	first, record, err := srv.Stu.Login(info.Code)
+	first, record, err := srv.Stu.Login(openid)
 	if err != nil {
 		c.Error(err)
 		return
