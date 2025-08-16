@@ -274,6 +274,7 @@ func (*Admin) Log(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
+	var filenames []string
 	for _, entry := range entries {
 		// 仅处理文件，忽略子目录
 		if !entry.IsDir() {
