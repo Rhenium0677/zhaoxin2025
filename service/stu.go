@@ -18,18 +18,18 @@ type Stu struct{}
 func (*Stu) Login(openid string) (bool, model.Stu, error) {
 	var record model.Stu
 	// 根据openid查询学生信息
-	if err := model.DB.Model(&model.Stu{}).Where("openid = ?", openid).First(&record).Error; err != nil {
+	if err := model.DB.Model(&model.Stu{}).Where("openid = ?", openid).Preload("Interv").First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 如果是第一次登录，创建学生记录
 			record.OpenID = openid
 			record.NetID = openid
 			if err := model.DB.Model(&model.Stu{}).Create(&record).Error; err != nil {
-				logger.GinLogger.Errorf("创建学生记录失败: %v", err)
+				logger.DatabaseLogger.Errorf("创建学生记录失败: %v", err)
 				return true, model.Stu{}, common.ErrNew(err, common.SysErr)
 			}
 			return true, record, nil
 		}
-		logger.GinLogger.Errorf("查询学生信息失败: %v", err)
+		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return false, model.Stu{}, common.ErrNew(err, common.SysErr)
 	}
 	// 登录成功，返回openid
@@ -44,12 +44,12 @@ func (*Stu) Update(info model.Stu) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return common.ErrNew(errors.New("没找到"), common.NotFoundErr)
 		}
-		logger.GinLogger.Errorf("查询学生信息失败: %v", err)
+		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	// 根据id更新学生信息
 	if err := model.DB.Model(&model.Stu{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
-		logger.GinLogger.Errorf("更新学生信息失败: %v", err)
+		logger.DatabaseLogger.Errorf("更新学生信息失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	// 更新成功
@@ -63,12 +63,12 @@ func (*Stu) UpdateMessage(netid string, message int) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return common.ErrNew(errors.New("没找到"), common.NotFoundErr)
 		}
-		logger.GinLogger.Errorf("查询学生信息失败: %v", err)
+		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	// 更新订阅消息设置
 	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).Update("message", message).Error; err != nil {
-		logger.GinLogger.Errorf("更新订阅消息设置失败: %v", err)
+		logger.DatabaseLogger.Errorf("更新订阅消息设置失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	// 更新成功
@@ -80,7 +80,7 @@ func (*Stu) GetIntervDate() (map[string]int, error) {
 	// 查询可用的面试日期
 	var record []model.Interv
 	if err := model.DB.Model(&model.Interv{}).Where("netid IS NULL").Where("time > ?", time.Now()).Find(&record).Error; err != nil {
-		logger.GinLogger.Errorf("查询可用面试日期失败: %v", err)
+		logger.DatabaseLogger.Errorf("查询可用面试日期失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
 	IntervDate := make(map[string]int)
@@ -97,7 +97,7 @@ func (*Stu) GetInterv(date time.Time) ([]model.Interv, error) {
 	var data []model.Interv
 	timeRange := DayRange(date)
 	if err := model.DB.Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Where("time > ?", time.Now()).Find(&data).Error; err != nil {
-		logger.GinLogger.Errorf("查询学生面试记录失败: %v", err)
+		logger.DatabaseLogger.Errorf("查询学生面试记录失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
 	// 返回查询到的面试记录
@@ -112,7 +112,7 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return common.ErrNew(errors.New("该面试不存在"), common.NotFoundErr)
 		}
-		logger.GinLogger.Errorf("查询面试记录失败: %v", err)
+		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	// 检查是否在不可预约时间段内
@@ -136,16 +136,16 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 	return model.DB.Model(&model.Interv{}).Transaction(func(tx *gorm.DB) error {
 		result := tx.Where("id = ?", intervid).Where("netid is NULL").Update("netid", netid)
 		if result.Error != nil {
-			logger.GinLogger.Errorf("预约面试失败: %v", result.Error)
+			logger.DatabaseLogger.Errorf("预约面试失败: %v", result.Error)
 			return common.ErrNew(result.Error, common.SysErr)
 		}
 		if result.RowsAffected == 0 {
 			return common.ErrNew(errors.New("预约面试失败，请稍后再试"), common.SysErr)
 		}
 		if stu.Message%2 == 1 {
-			logger.GinLogger.Infof("尝试为 %s 发送订阅消息", stu.OpenID)
+			logger.DatabaseLogger.Infof("尝试为 %s 发送订阅消息", stu.OpenID)
 			if err := SendRegister(stu); err != nil {
-				logger.GinLogger.Errorf("发送订阅消息失败: %v", err)
+				logger.DatabaseLogger.Errorf("发送订阅消息失败: %v", err)
 			}
 		}
 		// 更新成功
@@ -161,7 +161,7 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return common.ErrNew(errors.New("没找到"), common.NotFoundErr)
 		}
-		logger.GinLogger.Errorf("查询面试记录失败: %v", err)
+		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	// 检查是否在不可预约时间段内
@@ -185,7 +185,7 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 
 	// 取消学生的面试预约
 	if err := model.DB.Model(&model.Interv{}).Where("id = ?", intervid).Update("netid", nil).Error; err != nil {
-		logger.GinLogger.Errorf("取消预约面试失败: %v", err)
+		logger.DatabaseLogger.Errorf("取消预约面试失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
 	// 更新成功
@@ -199,7 +199,7 @@ func (*Stu) GetRes(netid string) (model.Interv, error) {
 	}
 	var data model.Interv
 	if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).First(&data).Error; err != nil {
-		logger.GinLogger.Errorf("查询学生面试结果失败: %v", err)
+		logger.DatabaseLogger.Errorf("查询学生面试结果失败: %v", err)
 		return model.Interv{}, common.ErrNew(err, common.SysErr)
 	}
 	return data, nil
