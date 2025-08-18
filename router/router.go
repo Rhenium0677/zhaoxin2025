@@ -18,7 +18,6 @@ func InitRouter(r *gin.Engine) {
 		{
 			adminRouter.POST("/", ctr.Admin.Login)
 			adminRouter.DELETE("/", ctr.Admin.Logout)
-			adminRouter.POST("/register", ctr.Admin.Register)
 			
 			adminRouter.Use(middleware.CheckRole(2))
 			adminRouter.PUT("/", ctr.Admin.Update)
@@ -31,6 +30,7 @@ func InitRouter(r *gin.Engine) {
 			adminRouter.GET("/getlog", ctr.Admin.DownloadLog)
 			
 			adminRouter.Use(middleware.CheckRole(3))
+			adminRouter.POST("/register", ctr.Admin.Register)
 			adminRouter.POST("/settime", ctr.Admin.SetTime)
 			adminRouter.GET("/send", ctr.Admin.SendResultMessage)
 		}
