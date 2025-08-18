@@ -155,7 +155,9 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 			logger.DatabaseLogger.Errorf("查询问题失败: %v", err)
 			return model.Que{}, common.ErrNew(err, common.SysErr)
 		}
-		return que, nil // 如果是幸运儿，直接返回
+		if que.Department == department {
+			return que, nil // 幸运儿，若部门匹配则直接返回，否则重抽
+		}
 	}
 	var data []model.Que
 	if err := model.DB.Model(&model.Que{}).Where("department = ?", department).Find(&data).
