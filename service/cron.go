@@ -91,14 +91,14 @@ func Send() {
 				return
 			}
 			for _, stu := range record {
-				//message := stu.Message
-				err := SendTime(stu)
-				logger.DatabaseLogger.Infof("[Cron] 正在为 %s 发送面试时间通知", stu.OpenID)
-				if err != nil {
-					logger.DatabaseLogger.Errorf("[Cron] 添加面试时间订阅消息失败: %v\n", err)
+				message := stu.Message				
+				if (message<<1)&1 == 1 && stu.Interv != nil && time.Now().Add(20*time.Minute).Before(stu.Interv.Time) && time.Now().Add(30*time.Minute).After(stu.Interv.Time) {
+					err := SendTime(stu)
+					logger.DatabaseLogger.Infof("[Cron] 正在为 %s 发送面试时间通知", stu.OpenID)
+					if err != nil {
+						logger.DatabaseLogger.Errorf("[Cron] 添加面试时间订阅消息失败: %v\n", err)
+					}
 				}
-				//if (message<<1)&1 == 1 && time.Now().Add(20*time.Minute).Before(stu.Interv.Time) && time.Now().Add(30*time.Minute).After(stu.Interv.Time) {
-				//}
 			}
 		}); err != nil {
 			logger.DatabaseLogger.Errorf("[Cron] 添加定时任务失败: %v\n", err)

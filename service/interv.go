@@ -146,16 +146,18 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
+	bool reshuffle = false
 	if record.QueID != 0 {
 		var que model.Que
 		if err := model.DB.Model(&model.Que{}).Where("id = ?", record.QueID).First(&que).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return model.Que{}, common.ErrNew(errors.New("指定了问题但没找到"), common.NotFoundErr)
+				reshuffle = true
+			} else {
+				logger.DatabaseLogger.Errorf("查询问题失败: %v", err)
+				return model.Que{}, common.ErrNew(err, common.SysErr)
 			}
-			logger.DatabaseLogger.Errorf("查询问题失败: %v", err)
-			return model.Que{}, common.ErrNew(err, common.SysErr)
 		}
-		if que.Department == department {
+		if que.Department == department && !reshuffle{
 			return que, nil // 幸运儿，若部门匹配则直接返回，否则重抽
 		}
 	}
