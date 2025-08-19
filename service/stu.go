@@ -182,7 +182,7 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 	}
 
 	// 取消学生的面试预约
-	if err := model.DB.Model(&model.Interv{}).Where("id = ?", intervid).Update("netid", nil).Update("department", None).Error; err != nil {
+	if err := model.DB.Model(&model.Interv{}).Where("id = ?", intervid).Update("netid", nil).Update("department", model.None).Error; err != nil {
 		logger.DatabaseLogger.Errorf("取消预约面试失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
