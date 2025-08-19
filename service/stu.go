@@ -79,7 +79,7 @@ func (*Stu) UpdateMessage(netid string, message int) error {
 func (*Stu) GetIntervDate() (map[string]int, error) {
 	// 查询可用的面试日期
 	var record []model.Interv
-	if err := model.DB.Model(&model.Interv{}).Where("netid IS NULL").Where("time > ?", time.Now()).Find(&record).Error; err != nil {
+	if err := model.DB.Model(&model.Interv{}).Where("netid IS NULL").Where("time > ?", time.Now().Add(-1 * time.Hour)).Find(&record).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询可用面试日期失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
@@ -91,7 +91,7 @@ func (*Stu) GetIntervDate() (map[string]int, error) {
 	return IntervDate, nil
 }
 
-// GetInterv 查询某日可用面试记录
+// GetInterv 查询某日所有面试记录，是否可用由 controller 判断
 func (*Stu) GetInterv(date time.Time) ([]model.Interv, error) {
 	// 查询学生的面试记录
 	var data []model.Interv

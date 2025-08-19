@@ -210,7 +210,7 @@ func (*Stu) GetInterv(c *gin.Context) {
 	}
 	var available, unavailable []model.Interv
 	for _, value := range data {
-		if value.NetID != nil && *(value.NetID) != session.NetID {
+		if (value.NetID != nil && *(value.NetID) != session.NetID) || time.Now().After(value.Time.Add(-1 * time.Hour)) {
 			unavailable = append(unavailable, value)
 		} else {
 			available = append(available, value)
