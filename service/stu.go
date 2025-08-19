@@ -133,8 +133,11 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 	}
 	// 更新学生的面试记录
 	var stu model.Stu
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&stu).Error; err != nil {
+		return common.ErrNew(errors.New("未查找到该netid的信息"), common.NotFoundErr)
+	}
 	return model.DB.Model(&model.Interv{}).Transaction(func(tx *gorm.DB) error {
-		result := tx.Where("id = ?", intervid).Where("netid is NULL").Update("netid", netid)
+		result := tx.Where("id = ?", intervid).Where("netid is NULL").Update("netid", netid).Update("department", stu.Depart)
 		if result.Error != nil {
 			logger.DatabaseLogger.Errorf("预约面试失败: %v", result.Error)
 			return common.ErrNew(result.Error, common.SysErr)
@@ -170,21 +173,16 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 			return common.ErrNew(errors.New("当前面试信息无法修改"), common.AuthErr)
 		}
 	}
-	if time.Now().After(record.Time) {
-		return common.ErrNew(errors.New("面试时间已过"), common.OpErr)
+	if time.Now().After(record.Time.Add(-30*time.Minute)) {
+		return common.ErrNew(errors.New("面试时间在半小时内或已过，无法取消预约"), common.AuthErr)
 	}
 	// 检查面试记录是否属于该学生
-	if record.NetID == nil && *record.NetID != netid {
+	if record.NetID == nil || *record.NetID != netid {
 		return common.ErrNew(errors.New("该面试记录不属于该学生"), common.AuthErr)
 	}
 
-	// 检查面试时间是否在半小时内或已经错过
-	if record.Time.Before(time.Now().Add(30*time.Minute)) || record.Time.Before(time.Now()) {
-		return common.ErrNew(errors.New("面试时间在半小时内或已经错过，无法取消预约"), common.AuthErr)
-	}
-
 	// 取消学生的面试预约
-	if err := model.DB.Model(&model.Interv{}).Where("id = ?", intervid).Update("netid", nil).Error; err != nil {
+	if err := model.DB.Model(&model.Interv{}).Where("id = ?", intervid).Update("netid", nil).Update("department", None).Error; err != nil {
 		logger.DatabaseLogger.Errorf("取消预约面试失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
