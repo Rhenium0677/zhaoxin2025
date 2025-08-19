@@ -135,9 +135,8 @@ func (*Admin) UpdateStu(c *gin.Context) {
 		School   string           `json:"school" binding:"omitempty"`
 		Mastered string           `json:"mastered" binding:"omitempty"`
 		ToMaster string           `json:"tomaster" binding:"omitempty"`
-		First    model.Department `json:"first" binding:"omitempty,oneof=tech video art"`
-		Second   model.Department `json:"second" binding:"omitempty,oneof=tech video art"`
-		QueID    int              `json:"que_id" binding:"omitempty,numeric"`
+		Depart   model.Department `json:"depart" binding:"omitempty,oneof=tech video art"`
+		QueID    int              `json:"queid" binding:"omitempty,numeric"`
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
