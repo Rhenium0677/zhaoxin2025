@@ -96,7 +96,7 @@ func (*Stu) GetInterv(date time.Time) ([]model.Interv, error) {
 	// 查询学生的面试记录
 	var data []model.Interv
 	timeRange := DayRange(date)
-	if err := model.DB.Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Where("netid is NULL").Where("time > ?", time.Now().Add(1 * time.Hour)).Find(&data).Error; err != nil {
+	if err := model.DB.Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询学生面试记录失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
