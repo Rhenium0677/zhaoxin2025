@@ -137,7 +137,7 @@ func (*Stu) AppointInterv(netid string, intervid int) error {
 		return common.ErrNew(errors.New("未查找到该netid的信息"), common.NotFoundErr)
 	}
 	return model.DB.Model(&model.Interv{}).Transaction(func(tx *gorm.DB) error {
-		result := tx.Where("id = ?", intervid).Where("netid is NULL").Update("netid", netid).Update("department", stu.Depart)
+		result := tx.Where("id = ?", intervid).Where("netid is NULL").Updates(map[string]interface{}{"netid": netid, "department": stu.Depart})
 		if result.Error != nil {
 			logger.DatabaseLogger.Errorf("预约面试失败: %v", result.Error)
 			return common.ErrNew(result.Error, common.SysErr)

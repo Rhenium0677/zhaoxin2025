@@ -150,7 +150,7 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 		var que model.Que
 		if err := model.DB.Model(&model.Que{}).Where("id = ?", record.QueID).First(&que).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return model.Que{}, common.ErrNew(errors.New("没有找到问题"), common.NotFoundErr)
+				return model.Que{}, common.ErrNew(errors.New("指定了问题但没找到"), common.NotFoundErr)
 			}
 			logger.DatabaseLogger.Errorf("查询问题失败: %v", err)
 			return model.Que{}, common.ErrNew(err, common.SysErr)
