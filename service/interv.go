@@ -146,7 +146,7 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
-	bool reshuffle = false
+	reshuffle := false
 	if record.QueID != 0 {
 		var que model.Que
 		if err := model.DB.Model(&model.Que{}).Where("id = ?", record.QueID).First(&que).Error; err != nil {
