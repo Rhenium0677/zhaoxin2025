@@ -65,7 +65,7 @@ func (*Admin) Update(netid string, name string, password string) error {
 func (*Admin) GetStu(stuInfo model.Stu, intervInfo model.Interv, page int, limit int) ([]model.Stu, int64, error) {
 	var data []model.Stu
 	var count int64
-	db := model.DB.Model(&model.Stu{}).Preload("Interv").Where(&stuInfo)
+	db := model.DB.Model(&model.Stu{}).Preload("Interv").Where(&stuInfo).Where("netid != openid")
 	if intervInfo.Evaluation != "" {
 		// 关联查询
 		db = db.Where("interv.evaluation LIKE ?", intervInfo.Evaluation)

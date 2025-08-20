@@ -96,9 +96,8 @@ func (*Admin) GetStu(c *gin.Context) {
 		Name        string           `form:"name" binding:"omitempty"`
 		Phone       string           `form:"phone" binding:"omitempty,len=11,numeric"`
 		School      string           `form:"school" binding:"omitempty"`
-		First       model.Department `form:"first" binding:"omitempty,oneof=tech video art none"`
-		Second      model.Department `form:"second" binding:"omitempty,oneof=tech video art none"`
-		Pass        int              `form:"pass" binding:"omitempty,oneof=0 1"`
+		Depart      model.Department `form:"depart" binding:"omitempty,oneof=tech video art none"`
+		Pass        int              `form:"pass" binding:"omitempty,oneof=1 2"`
 		Interviewer string           `form:"interviewer" binding:"omitempty"`
 		Star        int              `form:"star" binding:"omitempty"`
 		Page        int              `form:"page" binding:"omitempty,min=1"`
@@ -144,10 +143,11 @@ func (*Admin) GetStu(c *gin.Context) {
 // UpdateStu 更新一个学生信息
 func (*Admin) UpdateStu(c *gin.Context) {
 	var info struct {
-		NetID    string           `json:"netid" binding:"required,len=10,numeric"`
+		NetID    string           `json:"netid" binding:"omitempty,len=10,numeric"`
 		Name     string           `json:"name" binding:"omitempty"`
 		Phone    string           `json:"phone" binding:"omitempty"`
 		School   string           `json:"school" binding:"omitempty"`
+		Pass     int              `json:"pass" binding:"omitempty,oneof=1 2"`
 		Mastered string           `json:"mastered" binding:"omitempty"`
 		ToMaster string           `json:"tomaster" binding:"omitempty"`
 		Depart   model.Department `json:"depart" binding:"omitempty,oneof=tech video art"`
