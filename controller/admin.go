@@ -3,8 +3,8 @@ package controller
 import (
 	"errors"
 	"fmt"
-	"os"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -101,11 +101,19 @@ func (*Admin) GetStu(c *gin.Context) {
 		Pass        int              `form:"pass" binding:"omitempty,oneof=0 1"`
 		Interviewer string           `form:"interviewer" binding:"omitempty"`
 		Star        int              `form:"star" binding:"omitempty"`
-		common.PagerForm
+		Page        int              `form:"page" binding:"omitempty,min=1"`
+		Limit       int              `form:"limit" binding:"omitempty,min=1,max=20"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
+	}
+	page, limit := 1, 1
+	if info.Page > 0 {
+		page = info.Page
+	}
+	if info.Limit > 0 {
+		limit = info.Limit
 	}
 	var stu model.Stu
 	if err := copier.Copy(&stu, &info); err != nil {
@@ -118,7 +126,7 @@ func (*Admin) GetStu(c *gin.Context) {
 		return
 	}
 	// 获取学生信息
-	data, err := srv.Admin.GetStu(stu, interv, info.Page, info.Limit)
+	data, err := srv.Admin.GetStu(stu, interv, page, limit)
 	if err != nil {
 		c.Error(err)
 		return
