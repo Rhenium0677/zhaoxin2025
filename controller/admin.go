@@ -126,13 +126,19 @@ func (*Admin) GetStu(c *gin.Context) {
 		return
 	}
 	// 获取学生信息
-	data, err := srv.Admin.GetStu(stu, interv, page, limit)
+	data, total, err := srv.Admin.GetStu(stu, interv, page, limit)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 	// 响应
-	c.JSON(http.StatusOK, ResponseNew(c, data))
+	c.JSON(http.StatusOK, ResponseNew(c, struct {
+		Total int64       `json:"total"`
+		Data  []model.Stu `json:"data"`
+	}{
+		Total: total,
+		Data:  data,
+	}))
 }
 
 // UpdateStu 更新一个学生信息
