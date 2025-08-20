@@ -24,8 +24,8 @@ type School struct {
 }
 
 type Gender struct {
-	Male    int `json:"male"`
-	Femaile int `json:"female"`
+	Male   int `json:"male"`
+	Female int `json:"female"`
 }
 
 type Depart struct {
@@ -84,6 +84,10 @@ func GetStat(stus []model.Stu, intervs []model.Interv) Stat {
 	gender := make(map[string]int)
 	depart := make(map[string]int)
 	for _, stu := range stus {
+		if stu.NetID == stu.OpenID {
+			res.Total--
+			continue // 忽略未注册的学生
+		}
 		province[provinceDict[toProvince(stu.NetID)]]++
 		school[stu.School]++
 		depart[string(stu.Depart)]++
@@ -119,8 +123,8 @@ func GetStat(stus []model.Stu, intervs []model.Interv) Stat {
 		})
 	}
 	res.Gender = Gender{
-		Male:    gender["male"],
-		Femaile: gender["female"],
+		Male:   gender["male"],
+		Female: gender["female"],
 	}
 	res.Depart = Depart{
 		Tech:      depart["tech"],
