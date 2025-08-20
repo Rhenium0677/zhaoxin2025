@@ -101,6 +101,7 @@ func (*Admin) GetStu(c *gin.Context) {
 		Pass        int              `form:"pass" binding:"omitempty,oneof=0 1"`
 		Interviewer string           `form:"interviewer" binding:"omitempty"`
 		Star        int              `form:"star" binding:"omitempty"`
+		common.PagerForm
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
@@ -117,7 +118,7 @@ func (*Admin) GetStu(c *gin.Context) {
 		return
 	}
 	// 获取学生信息
-	data, err := srv.Admin.GetStu(stu, interv)
+	data, err := srv.Admin.GetStu(stu, interv, info.Page, info.Limit)
 	if err != nil {
 		c.Error(err)
 		return

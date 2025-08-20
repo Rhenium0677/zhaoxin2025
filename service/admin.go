@@ -62,7 +62,7 @@ func (*Admin) Update(netid string, name string, password string) error {
 }
 
 // 筛选并获取学生信息
-func (*Admin) GetStu(stuInfo model.Stu, intervInfo model.Interv) ([]model.Stu, error) {
+func (*Admin) GetStu(stuInfo model.Stu, intervInfo model.Interv, page int, limit int) ([]model.Stu, error) {
 	var data []model.Stu
 	db := model.DB.Model(&model.Stu{}).Preload("Interv").Where(&stuInfo)
 	if intervInfo.Evaluation != "" {
@@ -73,7 +73,7 @@ func (*Admin) GetStu(stuInfo model.Stu, intervInfo model.Interv) ([]model.Stu, e
 		// 关联查询
 		db = db.Where("interv.interviewer LIKE ?", intervInfo.Interviewer)
 	}
-	if err := db.Find(&data).Error; err != nil {
+	if err := db.Offset((page - 1) * limit).Limit(limit).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
