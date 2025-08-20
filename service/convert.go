@@ -31,7 +31,7 @@ func Date(t time.Time) string {
 }
 
 func Pass(pass int) string {
-	if pass == 2 {
+	if pass == 1 {
 		return "已通过"
 	}
 	return "未通过"

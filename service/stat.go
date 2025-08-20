@@ -98,13 +98,13 @@ func GetStat(stus []model.Stu, intervs []model.Interv) Stat {
 		}
 	}
 	for _, interv := range intervs {
-		if interv.Department == model.Tech && interv.Pass == 2 {
+		if interv.Department == model.Tech && interv.Pass == 1 {
 			depart["tech_pass"]++
 		}
-		if interv.Department == model.Art && interv.Pass == 2 {
+		if interv.Department == model.Art && interv.Pass == 1 {
 			depart["art_pass"]++
 		}
-		if interv.Department == model.Video && interv.Pass == 2 {
+		if interv.Department == model.Video && interv.Pass == 1 {
 			depart["video_pass"]++
 		}
 	}
