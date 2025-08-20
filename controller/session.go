@@ -43,7 +43,7 @@ func SessionDelete(c *gin.Context, name string) {
 }
 
 func NetIDValid(session UserSession) error {
-	if session.NetID == "" {
+	if session.NetID == "" || len(session.NetID) != 10 {
 		return errors.New("NetID无效，请先更新NetID") // NetID 为空，表示NetID未设置或无效
 	}
 	return nil // NetID 有效

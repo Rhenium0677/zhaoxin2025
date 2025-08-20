@@ -30,21 +30,21 @@ func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int6
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return 0, nil, common.ErrNew(err, common.SysErr)
 	}
-	for i := range data {
-		if data[i].NetID != nil {
-			var stu model.Stu
-			if err := model.DB.Model(&model.Stu{}).Where("netid = ?", *data[i].NetID).First(&stu).Error; err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					logger.DatabaseLogger.Warnf("没有找到对应的学生信息: %s", *data[i].NetID)
-				} else {
-					logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
-					return 0, nil, common.ErrNew(err, common.SysErr)
-				}
-			}
-			data[i].QueID = stu.QueID
-		}
-	}
 	return count, data, nil
+}
+
+// GetDate 获取所有日期对应的面试个数
+func (*Interv) GetDate() (map[string]int, error) {
+	var data []model.Interv
+	if err := model.DB.Model(&model.Interv{}).Find(&data).Error; err != nil {
+		logger.DatabaseLogger.Errorf("查询可用面试日期失败: %v", err)
+		return nil, common.ErrNew(err, common.SysErr)
+	}
+	intervDate := make(map[string]int)
+	for _, interv := range data {
+		intervDate[Date(interv.Time)]++
+	}
+	return intervDate, nil
 }
 
 // New 创建新的面试时间记录
@@ -101,6 +101,12 @@ func (*Interv) Update(info model.Interv) error {
 		logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
+	if info.Evaluation != "" {
+		if err := model.DB.Model(&model.Interv{}).Where("id = ?", info.ID).Update("status", 2).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新面试状态失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+	}
 	return nil
 }
 
@@ -155,7 +161,7 @@ func (*Interv) Swap(id1, id2 int) error {
 }
 
 // GetQue 为一个学生抽题，若幸运儿则假装抽过
-func (i *Interv) GetQue(netid string, department model.Department) (model.Que, error) {
+func (i *Interv) GetQue(netid string, department model.Department, timeRecord int64) (model.Que, error) {
 	var record model.Stu
 	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -167,7 +173,7 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 	reshuffle := false
 	if record.QueID != 0 {
 		var que model.Que
-		if err := model.DB.Model(&model.Que{}).Where("id = ?", record.QueID).First(&que).Error; err != nil {
+		if err := model.DB.Model(&model.Que{}).Where("queid = ?", record.QueID).First(&que).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				reshuffle = true
 			} else {
@@ -192,15 +198,22 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 		return model.Que{}, common.ErrNew(errors.New("没有找到问题"), common.NotFoundErr)
 	}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	id := r.Intn(len(data))
+	queid := r.Intn(len(data))
 	tx := model.DB.Begin()
+	// 先更新 QueID
 	if err := tx.Model(&model.Stu{}).Where("netid = ?", netid).
-		Update("queid", data[id].ID).Error; err != nil {
+		Update("queid", data[queid].ID).Error; err != nil {
 		tx.Rollback()
 		logger.DatabaseLogger.Errorf("更新学生问题ID失败: %v", err)
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
-	if err := tx.Model(&model.Que{}).Where("id = ?", id).
+	if err := tx.Model(&model.Interv{}).Where("netid = ?", netid).Updates(map[string]interface{}{"status": 1, "quetime": timeRecord, "queid": queid}).Error; err != nil {
+		logger.DatabaseLogger.Errorf("更新面试状态失败: %v", err)
+		tx.Rollback()
+		return model.Que{}, common.ErrNew(err, common.SysErr)
+	}
+	// 增加被抽中次数
+	if err := tx.Model(&model.Que{}).Where("queid = ?", queid).
 		Update("times", gorm.Expr("times + ?", 1)).
 		Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
@@ -211,7 +224,7 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 		logger.DatabaseLogger.Errorf("提交事务失败: %v", err)
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
-	return data[id], nil
+	return data[queid], nil
 }
 
 func (*Interv) BlockAndRecover(timeRange TimeRange, block bool) error {

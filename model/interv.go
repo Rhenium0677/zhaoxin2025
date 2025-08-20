@@ -13,5 +13,7 @@ type Interv struct {
 	Star        int        `gorm:"column:star;not null;default:0;comment:'星级'" json:"star"`
 	Evaluation  string     `gorm:"column:evaluation;not null;comment:'评价'" json:"evaluation"`
 	Pass        int        `gorm:"column:pass;default:0;not null;comment:'是否通过面试'" json:"pass"`
-	QueID       int        `gorm:"-" json:"queid"`
+	QueID       int        `gorm:"column:queid;comment:'问题ID'" json:"queid"`
+	QueTime     int        `gorm:"column:quetime;default:0;not null;comment:'抽题时的时间戳'" json:"quetime"`
+	Status      int        `gorm:"column:status;default:0;not null;comment:'状态，0-未开始，1-进行中，2-已结束'" json:"status"`
 }

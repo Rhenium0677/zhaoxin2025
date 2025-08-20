@@ -64,6 +64,16 @@ func (*Interv) Get(c *gin.Context) {
 	}))
 }
 
+// GetDate 获取所有日期对应面试个数
+func (*Interv) GetDate(c *gin.Context) {
+	data, err := srv.Interv.GetDate()
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, data))
+}
+
 // New 新建面试时间
 func (*Interv) New(c *gin.Context) {
 	// 绑定请求体
@@ -191,12 +201,17 @@ func (*Interv) GetQue(c *gin.Context) {
 	var info struct {
 		NetID      string           `form:"netid" binding:"required,numeric,len=10"`
 		Department model.Department `form:"department" binding:"required,oneof=tech video art"`
+		TimeStamp  int64            `form:"timestamp" binding:"omitempty,numeric"` // 时间戳，用于前端缓存
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-	data, err := srv.Interv.GetQue(info.NetID, info.Department)
+	// 如果前端没有传入时间戳，则使用当前时间戳
+	if info.TimeStamp == 0 {
+		info.TimeStamp = time.Now().Unix()
+	}
+	data, err := srv.Interv.GetQue(info.NetID, info.Department, info.TimeStamp)
 	if err != nil {
 		c.Error(err)
 		return
