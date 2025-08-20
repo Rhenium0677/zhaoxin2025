@@ -64,7 +64,7 @@ func Excelize(data []model.Stu, filename string) error {
 	// 3. 定义表头 (手动指定，对应结构体字段)
 	// 这个顺序决定了 Excel 列的顺序
 	headers := []string{"OpenID", "NetID", "名字", "电话号码", "书院", "在哪里知道的", "已经会的技能", "想要掌握的技能", "主选部门", "标签", "面试时间", "面试官", "面试评价", "评级", "问题"}
-	// 对应结构体字段: OpenID, NetID, Name, Phone, School, WhereKnow, Mastered, ToMaster, Depart, Tag, Time, Interviewer, Evaluation, Star, Question
+	// 对应结构体字段: OpenID, NetID, Name, Phone, School, WhereKnow, Mastered, ToMaster, Depart, Tag, Date, Interviewer, Evaluation, Star, Question
 
 	// 4. 写入表头
 	for i, header := range headers {

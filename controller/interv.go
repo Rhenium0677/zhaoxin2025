@@ -23,11 +23,13 @@ func (*Interv) Get(c *gin.Context) {
 	// 绑定查询参数
 	var info struct {
 		ID          int              `form:"id" binding:"omitempty"`
-		Department  model.Department `form:"department,omitempty"`
+		NetID       *string          `form:"netid" binding:"omitempty,numeric,len=10"`
+		Department  model.Department `form:"department" binding:"omitempty,oneof=tech video art"`
 		Interviewer string           `form:"interviewer,omitempty"`
 		Pass        int              `form:"pass" binding:"omitempty,oneof=0 1"`
 		Date        time.Time        `form:"date" binding:"omitempty"`
-		common.PagerForm
+		Page        int              `form:"page" binding:"omitempty,min=1"`
+		Limit       int              `form:"limit" binding:"omitempty,min=1,max=20"`
 	}
 	if err := c.ShouldBind(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
@@ -38,8 +40,16 @@ func (*Interv) Get(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
+	// 设置默认分页参数
+	page, limit := 1, 1
+	if info.Page > 0 {
+		page = info.Page
+	}
+	if info.Limit > 0 {
+		limit = info.Limit
+	}
 	// 调用服务层获取数据
-	total, data, err := srv.Interv.Get(interv, info.Page, info.Limit)
+	total, data, err := srv.Interv.Get(interv, info.Date, page, limit)
 	if err != nil {
 		c.Error(err)
 		return

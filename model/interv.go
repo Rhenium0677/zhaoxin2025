@@ -13,4 +13,5 @@ type Interv struct {
 	Star        int        `gorm:"column:star;not null;default:0;comment:'星级'" json:"star"`
 	Evaluation  string     `gorm:"column:evaluation;not null;comment:'评价'" json:"evaluation"`
 	Pass        int        `gorm:"column:pass;default:0;not null;comment:'是否通过面试'" json:"pass"`
+	QueID       int        `gorm:"-" json:"queid"`
 }

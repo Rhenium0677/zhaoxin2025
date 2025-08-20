@@ -14,10 +14,14 @@ import (
 type Interv struct{}
 
 // Get 按条件查询面试记录，支持分页
-func (*Interv) Get(info model.Interv, page int, limit int) (int64, []model.Interv, error) {
+func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int64, []model.Interv, error) {
 	var data []model.Interv
 	var count int64
 	db := model.DB.Model(&model.Interv{}).Where(&info)
+	if date != (time.Time{}) {
+		timeRange := DayRange(date)
+		db = db.Where("time BETWEEN ? AND ?", timeRange.Start, timeRange.End)
+	}
 	if err := db.Count(&count).Error; err != nil {
 		logger.DatabaseLogger.Errorf("统计数据总数失败: %v", err)
 		return 0, nil, common.ErrNew(err, common.SysErr)
@@ -25,6 +29,20 @@ func (*Interv) Get(info model.Interv, page int, limit int) (int64, []model.Inter
 	if err := db.Offset((page - 1) * limit).Limit(limit).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return 0, nil, common.ErrNew(err, common.SysErr)
+	}
+	for i := range data {
+		if data[i].NetID != nil {
+			var stu model.Stu
+			if err := model.DB.Model(&model.Stu{}).Where("netid = ?", *data[i].NetID).First(&stu).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					logger.DatabaseLogger.Warnf("没有找到对应的学生信息: %s", *data[i].NetID)
+				} else {
+					logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
+					return 0, nil, common.ErrNew(err, common.SysErr)
+				}
+			}
+			data[i].QueID = stu.QueID
+		}
 	}
 	return count, data, nil
 }
@@ -157,7 +175,7 @@ func (i *Interv) GetQue(netid string, department model.Department) (model.Que, e
 				return model.Que{}, common.ErrNew(err, common.SysErr)
 			}
 		}
-		if que.Department == department && !reshuffle{
+		if que.Department == department && !reshuffle {
 			return que, nil // 幸运儿，若部门匹配则直接返回，否则重抽
 		}
 	}
