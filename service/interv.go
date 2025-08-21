@@ -173,7 +173,7 @@ func (i *Interv) GetQue(netid string, department model.Department, timeRecord in
 	reshuffle := false
 	if record.QueID != 0 {
 		var que model.Que
-		if err := model.DB.Model(&model.Que{}).Where("queid = ?", record.QueID).First(&que).Error; err != nil {
+		if err := model.DB.Model(&model.Que{}).Where("id = ?", record.QueID).First(&que).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				reshuffle = true
 			} else {
@@ -213,7 +213,7 @@ func (i *Interv) GetQue(netid string, department model.Department, timeRecord in
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
 	// 增加被抽中次数
-	if err := tx.Model(&model.Que{}).Where("queid = ?", queid).
+	if err := tx.Model(&model.Que{}).Where("id = ?", queid).
 		Update("times", gorm.Expr("times + ?", 1)).
 		Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
