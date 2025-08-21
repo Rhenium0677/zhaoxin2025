@@ -3,8 +3,9 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"time"
 	"path/filepath"
+	"strconv"
+	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/model"
 
@@ -42,6 +43,22 @@ func (*Que) Get(c *gin.Context) {
 	}))
 }
 
+// GetOne 获取单个问题
+func (*Que) GetOne(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	var data model.Que
+	data, err = srv.Que.GetOne(id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, data))
+}
+
 // New 新建问题
 // 接收问题列表并创建新的问题记录
 func (*Que) New(c *gin.Context) {
@@ -75,7 +92,6 @@ func (*Que) New(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
-
 
 // NewData 上传图片、视频等文件
 func (*Que) NewData(c *gin.Context) {

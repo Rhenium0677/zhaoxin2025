@@ -66,6 +66,7 @@ func InitRouter(r *gin.Engine) {
 		queRouter := apiRouter.Group("/que")
 		{
 			queRouter.GET("/", ctr.Que.Get)
+			queRouter.GET("/:id", ctr.Que.GetOne)
 
 			queRouter.Use(middleware.CheckRole(2))
 			queRouter.POST("/", ctr.Que.New)

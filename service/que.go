@@ -41,6 +41,19 @@ func (*Que) Get(que string, department []model.Department, url string) (int64, [
 	return count, data, nil
 }
 
+// GetOne 获取单个问题
+func (*Que) GetOne(id int64) (model.Que, error) {
+	var data model.Que
+	if err := model.DB.Model(&model.Que{}).Where("id = ?", id).Omit("created_at", "updated_at", "deleted_at").First(&data).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.Que{}, common.ErrNew(errors.New("该问题不存在"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("获取单个问题失败：%v", err)
+		return model.Que{}, common.ErrNew(err, common.SysErr)
+	}
+	return data, nil
+}
+
 // New 新建问题
 // 批量创建问题记录
 func (*Que) New(list []model.Que) error {
