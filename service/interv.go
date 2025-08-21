@@ -30,6 +30,24 @@ func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int6
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return 0, nil, common.ErrNew(err, common.SysErr)
 	}
+	for i, _ := range data {
+		if data[i].NetID != nil {
+			var stu model.Stu
+			if err := model.DB.Model(&model.Stu{}).Where("netid = ?", *data[i].NetID).First(&stu).Error; err != nil {
+				logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
+				return 0, nil, common.ErrNew(err, common.SysErr)
+			} else {
+				if stu.QueID != 0 && data[i].QueID != stu.QueID { // 如果学生已经抽过题且面试记录中的题目ID不匹配，则更新面试记录
+					logger.DatabaseLogger.Warnf("面试记录中的题目ID与学生信息不匹配，正在修正")
+					if err := model.DB.Model(&model.Interv{}).Where("id = ?", data[i].ID).Update("queid", stu.QueID).Error; err != nil {
+						logger.DatabaseLogger.Errorf("更新面试问题ID失败: %v", err)
+						return 0, nil, common.ErrNew(err, common.SysErr)
+					}
+					data[i].QueID = stu.QueID // 关联学生信息
+				}
+			}
+		}
+	}
 	return count, data, nil
 }
 
@@ -163,6 +181,7 @@ func (*Interv) Swap(id1, id2 int) error {
 // GetQue 为一个学生抽题，若幸运儿则假装抽过
 func (i *Interv) GetQue(netid string, department model.Department, timeRecord int64) (model.Que, error) {
 	var record model.Stu
+	// 查出对应学生
 	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.Que{}, common.ErrNew(errors.New("没有找到学生信息"), common.NotFoundErr)
