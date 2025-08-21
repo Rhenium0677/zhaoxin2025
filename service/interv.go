@@ -182,6 +182,22 @@ func (i *Interv) GetQue(netid string, department model.Department, timeRecord in
 			}
 		}
 		if que.Department == department && !reshuffle {
+			if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).
+				Update("queid", record.QueID).Error; err != nil {
+				logger.DatabaseLogger.Errorf("更新学生问题ID失败: %v", err)
+				return model.Que{}, common.ErrNew(err, common.SysErr)
+			}
+			if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).
+				Updates(map[string]interface{}{"status": 1, "quetime": timeRecord, "queid": record.QueID}).Error; err != nil {
+				logger.DatabaseLogger.Error(err)
+				return model.Que{}, common.ErrNew(err, common.SysErr)
+			}
+			if err := model.DB.Model(&model.Que{}).Where("id = ?", record.QueID).
+				Update("times", gorm.Expr("times + ?", 1)).
+				Error; err != nil {
+				logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
+				return model.Que{}, common.ErrNew(err, common.SysErr)
+			}
 			return que, nil // 幸运儿，若部门匹配则直接返回，否则重抽
 		}
 	}
@@ -198,22 +214,22 @@ func (i *Interv) GetQue(netid string, department model.Department, timeRecord in
 		return model.Que{}, common.ErrNew(errors.New("没有找到问题"), common.NotFoundErr)
 	}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	queid := r.Intn(len(data))
+	queidx := r.Intn(len(data))
 	tx := model.DB.Begin()
 	// 先更新 QueID
 	if err := tx.Model(&model.Stu{}).Where("netid = ?", netid).
-		Update("queid", data[queid].ID).Error; err != nil {
-		tx.Rollback()
+		Update("queid", data[queidx].ID).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新学生问题ID失败: %v", err)
+		tx.Rollback()
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
-	if err := tx.Model(&model.Interv{}).Where("netid = ?", netid).Updates(map[string]interface{}{"status": 1, "quetime": timeRecord, "queid": queid}).Error; err != nil {
+	if err := tx.Model(&model.Interv{}).Where("netid = ?", netid).Updates(map[string]interface{}{"status": 1, "quetime": timeRecord, "queid": data[queidx].ID}).Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新面试状态失败: %v", err)
 		tx.Rollback()
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
 	// 增加被抽中次数
-	if err := tx.Model(&model.Que{}).Where("id = ?", queid).
+	if err := tx.Model(&model.Que{}).Where("id = ?", data[queidx].ID).
 		Update("times", gorm.Expr("times + ?", 1)).
 		Error; err != nil {
 		logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
@@ -224,7 +240,7 @@ func (i *Interv) GetQue(netid string, department model.Department, timeRecord in
 		logger.DatabaseLogger.Errorf("提交事务失败: %v", err)
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
-	return data[queid], nil
+	return data[queidx], nil
 }
 
 func (*Interv) BlockAndRecover(timeRange TimeRange, block bool) error {
