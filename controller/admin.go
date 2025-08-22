@@ -143,15 +143,17 @@ func (*Admin) GetStu(c *gin.Context) {
 // UpdateStu 更新一个学生信息
 func (*Admin) UpdateStu(c *gin.Context) {
 	var info struct {
-		NetID    string           `json:"netid" binding:"omitempty,len=10,numeric"`
-		Name     string           `json:"name" binding:"omitempty"`
-		Phone    string           `json:"phone" binding:"omitempty"`
-		School   string           `json:"school" binding:"omitempty"`
-		Pass     int              `json:"pass" binding:"omitempty,oneof=0 1"`
-		Mastered string           `json:"mastered" binding:"omitempty"`
-		ToMaster string           `json:"tomaster" binding:"omitempty"`
-		Depart   model.Department `json:"depart" binding:"omitempty,oneof=tech video art"`
-		QueID    int              `json:"queid" binding:"omitempty,numeric"`
+		NetID     string           `json:"netid" binding:"omitempty,len=10,numeric"`
+		Name      string           `json:"name" binding:"omitempty"`
+		Phone     string           `json:"phone" binding:"omitempty"`
+		School    string           `json:"school" binding:"omitempty"`
+		Pass      int              `json:"pass" binding:"omitempty,oneof=0 1"`
+		Mastered  string           `json:"mastered" binding:"omitempty"`
+		ToMaster  string           `json:"tomaster" binding:"omitempty"`
+		WhereKnow string           `json:"whereknow" binding:"omitempty"`
+		Tag       string           `json:"tag" binding:"omitempty"`
+		Depart    model.Department `json:"depart" binding:"omitempty,oneof=tech video art"`
+		QueID     int              `json:"queid" binding:"omitempty,numeric"`
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
