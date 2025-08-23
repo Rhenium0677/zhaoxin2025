@@ -104,6 +104,27 @@ func (*Interv) Create(netid string, department model.Department, time time.Time)
 	return nil
 }
 
+func (*Interv) Cancel(id int) error {
+	tx := model.DB.Begin()
+	if err := tx.Model(&model.Stu{}).Where("netid = (SELECT netid FROM interv WHERE id = ?)", id).
+		Update("queid", 0).Error; err != nil {
+		logger.DatabaseLogger.Errorf("重置学生问题ID失败: %v", err)
+		tx.Rollback()
+		return common.ErrNew(err, common.SysErr)
+	}
+	if err := tx.Model(&model.Interv{}).Where("id = ?", id).
+		Updates(map[string]interface{}{"netid": nil, "status": 0, "quetime": 0, "queid": 0, "evaluation": "", "star": 0, "pass": 0, "interviewer": "", "department": "none"}).Error; err != nil {
+		logger.DatabaseLogger.Errorf("取消面试记录失败: %v", err)
+		tx.Rollback()
+		return common.ErrNew(err, common.SysErr)
+	}
+	if err := tx.Commit().Error; err != nil {
+		logger.DatabaseLogger.Errorf("提交事务失败: %v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	return nil
+}
+
 // Update 更新面试记录信息
 func (*Interv) Update(info model.Interv) error {
 	var record model.Interv

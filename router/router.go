@@ -57,6 +57,7 @@ func InitRouter(r *gin.Engine) {
 			intervRouter.GET("/", ctr.Interv.Get)
 			intervRouter.GET("/date", ctr.Interv.GetDate)
 			intervRouter.POST("/create", ctr.Interv.Create)
+			intervRouter.PUT("/cancel", ctr.Interv.Cancel)
 			intervRouter.DELETE("/", ctr.Interv.Delete)
 			intervRouter.PUT("/swap", ctr.Interv.Swap)
 			intervRouter.PUT("/", ctr.Interv.Update)
