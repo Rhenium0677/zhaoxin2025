@@ -106,7 +106,7 @@ func (*Interv) Create(netid string, department model.Department, time time.Time)
 
 func (*Interv) Cancel(id int) error {
 	tx := model.DB.Begin()
-	if err := tx.Model(&model.Stu{}).Where("netid = (SELECT netid FROM interv WHERE id = ?)", id).
+	if err := tx.Model(&model.Stu{}).Where("netid = (SELECT netid FROM intervs WHERE id = ?)", id).
 		Update("queid", 0).Error; err != nil {
 		logger.DatabaseLogger.Errorf("重置学生问题ID失败: %v", err)
 		tx.Rollback()
