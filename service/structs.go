@@ -1,6 +1,9 @@
 package service
 
-import "time"
+import (
+	"time"
+	"zhaoxin2025/model"
+)
 
 type FailSend struct {
 	NetID   string `json:"neteid"`
@@ -13,4 +16,9 @@ type StuMsgInfo struct {
 	Phone  string
 	First  string
 	Interv string
+}
+
+type IntervInfo struct {
+	model.Interv
+	Name string `json:"name"`
 }

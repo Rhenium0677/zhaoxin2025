@@ -56,8 +56,8 @@ func (*Interv) Get(c *gin.Context) {
 	}
 	// 返回查询结果
 	c.JSON(http.StatusOK, ResponseNew(c, struct {
-		Total int64          `json:"total"`
-		Data  []model.Interv `json:"data"`
+		Total int64                `json:"total"`
+		Data  []service.IntervInfo `json:"data"`
 	}{
 		Total: total,
 		Data:  data,

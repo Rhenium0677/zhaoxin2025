@@ -14,7 +14,7 @@ import (
 type Interv struct{}
 
 // Get 按条件查询面试记录，支持分页
-func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int64, []model.Interv, error) {
+func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int64, []IntervInfo, error) {
 	var data []model.Interv
 	var count int64
 	db := model.DB.Model(&model.Interv{}).Where(&info)
@@ -30,6 +30,7 @@ func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int6
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return 0, nil, common.ErrNew(err, common.SysErr)
 	}
+	var dataInfo []IntervInfo
 	for i, _ := range data {
 		if data[i].NetID != nil {
 			var stu model.Stu
@@ -46,9 +47,17 @@ func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int6
 					data[i].QueID = stu.QueID // 关联学生信息
 				}
 			}
+			dataInfo = append(dataInfo, IntervInfo{
+				Interv: data[i],
+				Name:   stu.Name,
+			})
 		}
+		dataInfo = append(dataInfo, IntervInfo{
+			Interv: data[i],
+			Name:   "",
+		})
 	}
-	return count, data, nil
+	return count, dataInfo, nil
 }
 
 // GetDate 获取所有日期对应的面试个数
