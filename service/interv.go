@@ -26,6 +26,10 @@ func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int6
 		logger.DatabaseLogger.Errorf("统计数据总数失败: %v", err)
 		return 0, nil, common.ErrNew(err, common.SysErr)
 	}
+	if limit == 0 {
+		page = 1           // 如果 limit 为 0，则页码无意义，重置为 1
+		limit = int(count) // 如果 limit 为 0，则查询所有记录
+	}
 	if err := db.Offset((page - 1) * limit).Limit(limit).Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return 0, nil, common.ErrNew(err, common.SysErr)

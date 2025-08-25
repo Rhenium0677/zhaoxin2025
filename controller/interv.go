@@ -40,8 +40,8 @@ func (*Interv) Get(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
-	// 设置默认分页参数
-	page, limit := 1, 1
+	// 设置默认分页参数，如果前端没有传入page则使用默认值1，limit默认无穷大，以0表示
+	page, limit := 1, 0
 	if info.Page > 0 {
 		page = info.Page
 	}
