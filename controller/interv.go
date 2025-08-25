@@ -64,14 +64,26 @@ func (*Interv) Get(c *gin.Context) {
 	}))
 }
 
-// GetDate 获取所有日期对应面试个数
+// GetDate 获取所有日期对应已预约的面试个数
 func (*Interv) GetDate(c *gin.Context) {
 	data, err := srv.Interv.GetDate()
 	if err != nil {
 		c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, ResponseNew(c, data))
+	type date struct {
+		Date  string `json:"date"`
+		Total int    `json:"total"`
+	}
+	var response []date
+	for k, v := range data {
+		date := date{
+			Date:  k,
+			Total: v,
+		}
+		response = append(response, date)
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, response))
 }
 
 // New 新建面试时间

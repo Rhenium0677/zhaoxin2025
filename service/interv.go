@@ -67,14 +67,21 @@ func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int6
 
 // GetDate 获取所有日期对应的面试个数
 func (*Interv) GetDate() (map[string]int, error) {
-	var data []model.Interv
-	if err := model.DB.Model(&model.Interv{}).Find(&data).Error; err != nil {
+	type row struct {
+		D time.Time `gorm:"column:d"`
+		C int       `gorm:"column:c"`
+	}
+	var rows []row
+	if err := model.DB.Model(&model.Interv{}).Where("netid IS NOT NULL").
+		Select("DATE(`time`) AS d, COUNT(*) AS c").
+		Group("DATE(`time`)").
+		Order("d").Scan(&rows).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询可用面试日期失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
-	intervDate := make(map[string]int)
-	for _, interv := range data {
-		intervDate[Date(interv.Time)]++
+	intervDate := make(map[string]int, len(rows))
+	for _, r := range rows {
+		intervDate[Date(r.D)] = r.C
 	}
 	return intervDate, nil
 }
