@@ -51,6 +51,7 @@ func (*Interv) Get(info model.Interv, date time.Time, page int, limit int) (int6
 				Interv: data[i],
 				Name:   stu.Name,
 			})
+			continue
 		}
 		dataInfo = append(dataInfo, IntervInfo{
 			Interv: data[i],
