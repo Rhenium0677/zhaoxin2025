@@ -14,7 +14,7 @@ func InitSession(r *gin.Engine) {
 	store := cookie.NewStore([]byte(Config.AppSecret))
 	opts := sessions.Options{
 		Path:     "/",
-		MaxAge:   3600,
+		MaxAge:   24 * 60 * 60,
 		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
@@ -22,7 +22,7 @@ func InitSession(r *gin.Engine) {
 	if !Config.AppProd {
 		opts = sessions.Options{
 			Path:     "/",
-			MaxAge:   3600,
+			MaxAge:   24 * 60 * 60,
 			Secure:   false,
 			HttpOnly: false,
 			SameSite: http.SameSiteLaxMode,
