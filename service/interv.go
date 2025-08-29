@@ -222,86 +222,118 @@ func (*Interv) Swap(id1, id2 int) error {
 
 // GetQue 为一个学生抽题，若幸运儿则假装抽过
 func (i *Interv) GetQue(netid string, department model.Department, timeRecord int64) (model.Que, error) {
-	var record model.Stu
-	// 查出对应学生
-	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&record).Error; err != nil {
+	var student model.Stu
+	// 查询学生信息
+	if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).First(&student).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return model.Que{}, common.ErrNew(errors.New("没有找到学生信息"), common.NotFoundErr)
 		}
 		logger.DatabaseLogger.Errorf("查询学生信息失败: %v", err)
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
-	reshuffle := false
-	if record.QueID != 0 {
-		var que model.Que
-		if err := model.DB.Model(&model.Que{}).Where("id = ?", record.QueID).First(&que).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				reshuffle = true
-			} else {
-				logger.DatabaseLogger.Errorf("查询问题失败: %v", err)
-				return model.Que{}, common.ErrNew(err, common.SysErr)
-			}
+
+	// 检查学生是否已经抽过题目且题目仍然有效
+	if student.QueID != 0 {
+		if que, err := i.validateExistingQuestion(student.QueID, department); err == nil {
+			// 题目有效，更新相关记录并返回
+			return que, i.updateRecordsForExistingQuestion(netid, student.QueID, timeRecord)
 		}
-		if que.Department == department && !reshuffle {
-			if err := model.DB.Model(&model.Stu{}).Where("netid = ?", netid).
-				Update("queid", record.QueID).Error; err != nil {
-				logger.DatabaseLogger.Errorf("更新学生问题ID失败: %v", err)
-				return model.Que{}, common.ErrNew(err, common.SysErr)
-			}
-			if err := model.DB.Model(&model.Interv{}).Where("netid = ?", netid).
-				Updates(map[string]interface{}{"status": 1, "quetime": timeRecord, "queid": record.QueID}).Error; err != nil {
-				logger.DatabaseLogger.Error(err)
-				return model.Que{}, common.ErrNew(err, common.SysErr)
-			}
-			if err := model.DB.Model(&model.Que{}).Where("id = ?", record.QueID).
-				Update("times", gorm.Expr("times + ?", 1)).
-				Error; err != nil {
-				logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
-				return model.Que{}, common.ErrNew(err, common.SysErr)
-			}
-			return que, nil // 幸运儿，若部门匹配则直接返回，否则重抽
-		}
+		// 题目无效或部门不匹配，需要重新抽题
 	}
-	var data []model.Que
-	if err := model.DB.Model(&model.Que{}).Where("department = ?", department).Find(&data).
-		Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return model.Que{}, common.ErrNew(errors.New("没有找到问题"), common.NotFoundErr)
+
+	// 抽取新题目
+	return i.drawNewQuestion(netid, department, timeRecord)
+}
+
+// validateExistingQuestion 验证已存在的题目是否有效且部门匹配
+func (*Interv) validateExistingQuestion(queID int, department model.Department) (model.Que, error) {
+	var que model.Que
+	if err := model.DB.Model(&model.Que{}).Where("id = ?", queID).First(&que).Error; err != nil {
+		return model.Que{}, err
+	}
+	if que.Department != department {
+		return model.Que{}, errors.New("部门不匹配")
+	}
+	return que, nil
+}
+
+// updateRecordsForExistingQuestion 为已存在的题目更新相关记录
+func (*Interv) updateRecordsForExistingQuestion(netid string, queID int, timeRecord int64) error {
+	return model.DB.Transaction(func(tx *gorm.DB) error {
+		// 更新面试状态
+		if err := tx.Model(&model.Interv{}).Where("netid = ?", netid).
+			Updates(map[string]interface{}{
+				"status":  1,
+				"quetime": timeRecord,
+				"queid":   queID,
+			}).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新面试状态失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
 		}
+
+		// 增加题目被抽中次数
+		if err := tx.Model(&model.Que{}).Where("id = ?", queID).
+			Update("times", gorm.Expr("times + ?", 1)).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+
+		return nil
+	})
+}
+
+// drawNewQuestion 抽取新题目
+func (*Interv) drawNewQuestion(netid string, department model.Department, timeRecord int64) (model.Que, error) {
+	// 查询该部门的所有题目
+	var questions []model.Que
+	if err := model.DB.Model(&model.Que{}).Where("department = ?", department).Find(&questions).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询问题失败: %v", err)
 		return model.Que{}, common.ErrNew(err, common.SysErr)
 	}
-	if len(data) == 0 {
+
+	if len(questions) == 0 {
 		return model.Que{}, common.ErrNew(errors.New("没有找到问题"), common.NotFoundErr)
 	}
+
+	// 随机选择题目
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	queidx := r.Intn(len(data))
-	tx := model.DB.Begin()
-	// 先更新 QueID
-	if err := tx.Model(&model.Stu{}).Where("netid = ?", netid).
-		Update("queid", data[queidx].ID).Error; err != nil {
-		logger.DatabaseLogger.Errorf("更新学生问题ID失败: %v", err)
-		tx.Rollback()
-		return model.Que{}, common.ErrNew(err, common.SysErr)
+	selectedQuestion := questions[r.Intn(len(questions))]
+
+	// 在事务中更新所有相关记录
+	err := model.DB.Transaction(func(tx *gorm.DB) error {
+		// 更新学生的题目ID
+		if err := tx.Model(&model.Stu{}).Where("netid = ?", netid).
+			Update("queid", selectedQuestion.ID).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新学生问题ID失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+
+		// 更新面试状态
+		if err := tx.Model(&model.Interv{}).Where("netid = ?", netid).
+			Updates(map[string]interface{}{
+				"status":  1,
+				"quetime": timeRecord,
+				"queid":   selectedQuestion.ID,
+			}).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新面试状态失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+
+		// 增加题目被抽中次数
+		if err := tx.Model(&model.Que{}).Where("id = ?", selectedQuestion.ID).
+			Update("times", gorm.Expr("times + ?", 1)).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return model.Que{}, err
 	}
-	if err := tx.Model(&model.Interv{}).Where("netid = ?", netid).Updates(map[string]interface{}{"status": 1, "quetime": timeRecord, "queid": data[queidx].ID}).Error; err != nil {
-		logger.DatabaseLogger.Errorf("更新面试状态失败: %v", err)
-		tx.Rollback()
-		return model.Que{}, common.ErrNew(err, common.SysErr)
-	}
-	// 增加被抽中次数
-	if err := tx.Model(&model.Que{}).Where("id = ?", data[queidx].ID).
-		Update("times", gorm.Expr("times + ?", 1)).
-		Error; err != nil {
-		logger.DatabaseLogger.Errorf("更新问题被抽中次数失败: %v", err)
-		tx.Rollback()
-		return model.Que{}, common.ErrNew(err, common.SysErr)
-	}
-	if err := tx.Commit().Error; err != nil {
-		logger.DatabaseLogger.Errorf("提交事务失败: %v", err)
-		return model.Que{}, common.ErrNew(err, common.SysErr)
-	}
-	return data[queidx], nil
+
+	return selectedQuestion, nil
 }
 
 func (*Interv) BlockAndRecover(timeRange TimeRange, block bool) error {
