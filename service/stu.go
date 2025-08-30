@@ -75,20 +75,32 @@ func (*Stu) UpdateMessage(netid string, message int) error {
 	return nil
 }
 
-// GetIntervDate 获取可用的面试日期
 func (*Stu) GetIntervDate() (map[string]int, error) {
-	// 查询可用的面试日期
-	var record []model.Interv
-	if err := model.DB.Model(&model.Interv{}).Where("netid IS NULL").Where("time > ?", time.Now().Add(-1 * time.Hour)).Find(&record).Error; err != nil {
+	type row struct {
+		D string `gorm:"column:d"`
+		C int    `gorm:"column:c"`
+	}
+
+	startline := time.Now().Add(1 * time.Hour)
+
+	var rows []row
+	if err := model.DB.
+		Model(&model.Interv{}).
+		Where("netid IS NULL").
+		Where("time > ?", startline).
+		Select("DATE_FORMAT(`time`, '%Y-%m-%d') AS d, COUNT(*) AS c").
+		Group("DATE_FORMAT(`time`, '%Y-%m-%d')").
+		Order("d").
+		Scan(&rows).Error; err != nil {
 		logger.DatabaseLogger.Errorf("查询可用面试日期失败: %v", err)
 		return nil, common.ErrNew(err, common.SysErr)
 	}
-	IntervDate := make(map[string]int)
-	for _, interv := range record {
-		IntervDate[Date(interv.Time)]++
+
+	out := make(map[string]int, len(rows))
+	for _, r := range rows {
+		out[r.D] = r.C
 	}
-	// 返回可用的面试日期
-	return IntervDate, nil
+	return out, nil
 }
 
 // GetInterv 查询某日所有面试记录，是否可用由 controller 判断
@@ -173,7 +185,7 @@ func (*Stu) CancelInterv(netid string, intervid int) error {
 			return common.ErrNew(errors.New("当前面试信息无法修改"), common.AuthErr)
 		}
 	}
-	if time.Now().After(record.Time.Add(-30*time.Minute)) {
+	if time.Now().After(record.Time.Add(-30 * time.Minute)) {
 		return common.ErrNew(errors.New("面试时间在半小时内或已过，无法取消预约"), common.AuthErr)
 	}
 	// 检查面试记录是否属于该学生
