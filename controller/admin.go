@@ -97,7 +97,7 @@ func (*Admin) GetStu(c *gin.Context) {
 		Phone       string           `form:"phone" binding:"omitempty,len=11,numeric"`
 		School      string           `form:"school" binding:"omitempty"`
 		Depart      model.Department `form:"depart" binding:"omitempty,oneof=tech video art none"`
-		Pass        int              `form:"pass" binding:"omitempty,oneof=0 1"`
+		Pass        int              `form:"pass" binding:"omitempty,oneof=0 1 2"`
 		Interviewer string           `form:"interviewer" binding:"omitempty"`
 		Star        int              `form:"star" binding:"omitempty"`
 		Page        int              `form:"page" binding:"omitempty,min=1"`

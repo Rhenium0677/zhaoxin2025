@@ -7,6 +7,7 @@ import (
 	dysmsapi20170525 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
 	"github.com/alibabacloud-go/tea/tea"
+	"strings"
 	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/config"
@@ -61,31 +62,75 @@ func (*Admin) Update(netid string, name string, password string) error {
 	return nil
 }
 
-// 筛选并获取学生信息
+// GetStu 筛选并获取学生信息
 func (*Admin) GetStu(stuInfo model.Stu, intervInfo model.Interv, page int, limit int) ([]model.Stu, int64, error) {
-	var data []model.Stu
-	var count int64
-	db := model.DB.Model(&model.Stu{}).Preload("Interv").Where(&stuInfo).Where("netid != openid")
-	if intervInfo.Evaluation != "" {
-		// 关联查询
-		db = db.Where("interv.evaluation LIKE ?", intervInfo.Evaluation)
+	var (
+		data  []model.Stu
+		count int64
+	)
+
+	// 基础学生筛选
+	db := model.DB.Model(&model.Stu{}).
+		Where("stus.netid <> stus.openid").
+		Where(&stuInfo)
+
+	// 是否存在面试条件
+	hasIntervCond := false
+
+	// EXISTS 子查询：只在提供面试筛选条件时启用
+	exists := model.DB.Model(&model.Interv{}).
+		Select("1").
+		Where("intervs.netid = stus.netid")
+
+	if s := strings.TrimSpace(intervInfo.Evaluation); s != "" {
+		exists = exists.Where("intervs.evaluation LIKE ?", "%"+s+"%")
+		hasIntervCond = true
 	}
-	if intervInfo.Interviewer != "" {
-		// 关联查询
-		db = db.Where("interv.interviewer LIKE ?", intervInfo.Interviewer)
+	if s := strings.TrimSpace(intervInfo.Interviewer); s != "" {
+		exists = exists.Where("intervs.interviewer LIKE ?", "%"+s+"%")
+		hasIntervCond = true
 	}
+	if intervInfo.Star != 0 {
+		exists = exists.Where("intervs.star = ?", intervInfo.Star)
+		hasIntervCond = true
+	}
+	// 传入 1 表示通过，2 表示未通过；0 表示不筛选
+	if intervInfo.Pass == 1 || intervInfo.Pass == 2 {
+		passVal := 1
+		if intervInfo.Pass == 2 {
+			passVal = 0
+		}
+		exists = exists.Where("intervs.pass = ?", passVal)
+		hasIntervCond = true
+	}
+
+	if hasIntervCond {
+		db = db.Where("EXISTS (?)", exists)
+	}
+
+	// 统计总数（无需 DISTINCT）
 	if err := db.Count(&count).Error; err != nil {
 		logger.DatabaseLogger.Errorf("统计学生信息失败：%v", err)
 		return nil, 0, common.ErrNew(err, common.SysErr)
 	}
-	if err := db.Offset((page - 1) * limit).Limit(limit).Find(&data).Error; err != nil {
+
+	offset := (page - 1) * limit
+
+	// 查询数据；预加载面试记录
+	if err := db.
+		Preload("Interv").
+		Order("stus.id ASC").
+		Offset(offset).
+		Limit(limit).
+		Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)
 		return nil, 0, common.ErrNew(err, common.SysErr)
 	}
+
 	return data, count, nil
 }
 
-// 更新一个学生信息
+// UpdateStu 更新一个学生信息
 func (*Admin) UpdateStu(stuInfo model.Stu) error {
 	// 检查学生是否存在
 	var existed model.Stu
