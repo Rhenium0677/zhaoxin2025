@@ -148,19 +148,10 @@ func (*Admin) UpdateStu(stuInfo model.Stu, intervInfo model.Interv) error {
 			return common.ErrNew(err, common.SysErr)
 		}
 		// 更新面试信息
-		if intervInfo.Pass == 2 {
-			intervInfo.Pass = 0
-			if err := tx.Model(&model.Interv{}).Where("netid = ?", stuInfo.NetID).
-				Select("evaluation", "interviewer", "star", "pass").
-				Updates(&intervInfo).Error; err != nil {
-				logger.DatabaseLogger.Errorf("更新面试信息失败：%v", err)
-				return common.ErrNew(err, common.SysErr)
-			}
-		} else {
-			if err := tx.Model(&model.Interv{}).Where("netid = ?", stuInfo.NetID).Updates(&intervInfo).Error; err != nil {
-				logger.DatabaseLogger.Errorf("更新面试信息失败：%v", err)
-				return common.ErrNew(err, common.SysErr)
-			}
+		intervService := &Interv{}
+		if err := intervService.Update(intervInfo); err != nil {
+			logger.DatabaseLogger.Errorf("更新面试信息失败：%v", err)
+			return err
 		}
 		return nil
 	})

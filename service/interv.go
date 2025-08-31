@@ -150,12 +150,23 @@ func (*Interv) Cancel(id int) error {
 func (*Interv) Update(info model.Interv) error {
 	var record model.Interv
 	// 检查要更新的记录是否存在
-	if err := model.DB.Model(&model.Interv{}).Where("id = ?", info.ID).First(&record).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
+	if info.ID != 0 {
+		if err := model.DB.Model(&model.Interv{}).Where("id = ?", info.ID).First(&record).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
+			}
+			logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
 		}
-		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
-		return common.ErrNew(err, common.SysErr)
+	} else {
+		if err := model.DB.Model(&model.Interv{}).Where("netid = ?", info.NetID).First(&record).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
+			}
+			logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+		info.ID = record.ID
 	}
 	return model.DB.Transaction(func(tx *gorm.DB) error {
 		if info.Evaluation != "" {

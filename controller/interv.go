@@ -156,8 +156,8 @@ func (*Interv) Cancel(c *gin.Context) {
 func (*Interv) Update(c *gin.Context) {
 	// 绑定请求体
 	var info struct {
-		ID          int              `json:"id" binding:"required"`
-		NetID       string           `json:"netid" binding:"required,numeric,len=10"`
+		ID          int              `json:"id" binding:"omitempty"`
+		NetID       string           `json:"netid" binding:"omitempty,numeric,len=10"`
 		Interviewer string           `json:"interviewer" binding:"omitempty"`
 		Time        time.Time        `json:"time" binding:"omitempty"`
 		Department  model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
