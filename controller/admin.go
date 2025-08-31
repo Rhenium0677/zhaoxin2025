@@ -147,7 +147,7 @@ func (*Admin) UpdateStu(c *gin.Context) {
 		Name      string           `json:"name" binding:"omitempty"`
 		Phone     string           `json:"phone" binding:"omitempty"`
 		School    string           `json:"school" binding:"omitempty"`
-		Pass      int              `json:"pass" binding:"omitempty,oneof=0 1"`
+		Pass      int              `json:"pass" binding:"omitempty,oneof=0 1 2"`
 		Mastered  string           `json:"mastered" binding:"omitempty"`
 		ToMaster  string           `json:"tomaster" binding:"omitempty"`
 		WhereKnow string           `json:"whereknow" binding:"omitempty"`
@@ -176,7 +176,7 @@ func (*Admin) UpdateStu(c *gin.Context) {
 		return
 	}
 	// 更新学生信息
-	if err := srv.Admin.UpdateStu(stu); err != nil {
+	if err := srv.Admin.UpdateStu(stu, interv); err != nil {
 		c.Error(err)
 		return
 	}

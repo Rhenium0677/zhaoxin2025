@@ -131,7 +131,7 @@ func (*Admin) GetStu(stuInfo model.Stu, intervInfo model.Interv, page int, limit
 }
 
 // UpdateStu 更新一个学生信息
-func (*Admin) UpdateStu(stuInfo model.Stu) error {
+func (*Admin) UpdateStu(stuInfo model.Stu, intervInfo model.Interv) error {
 	// 检查学生是否存在
 	var existed model.Stu
 	if err := model.DB.Model(&model.Stu{}).Where("id = ?", stuInfo.ID).First(&existed).Error; err != nil {
@@ -141,11 +141,29 @@ func (*Admin) UpdateStu(stuInfo model.Stu) error {
 		logger.DatabaseLogger.Errorf("检查学生是否存在失败：%v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
-	if err := model.DB.Model(&model.Stu{}).Where("id = ?", stuInfo.ID).Updates(stuInfo).Error; err != nil {
-		logger.DatabaseLogger.Errorf("更新学生信息失败：%v", err)
-		return common.ErrNew(err, common.SysErr)
-	}
-	return nil
+	return model.DB.Transaction(func(tx *gorm.DB) error {
+		// 更新学生信息
+		if err := tx.Model(&model.Stu{}).Where("id = ?", stuInfo.ID).Updates(&stuInfo).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新学生信息失败：%v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+		// 更新面试信息
+		if intervInfo.Pass == 2 {
+			intervInfo.Pass = 0
+			if err := tx.Model(&model.Interv{}).Where("netid = ?", stuInfo.NetID).
+				Select("evaluation", "interviewer", "star", "pass").
+				Updates(&intervInfo).Error; err != nil {
+				logger.DatabaseLogger.Errorf("更新面试信息失败：%v", err)
+				return common.ErrNew(err, common.SysErr)
+			}
+		} else {
+			if err := tx.Model(&model.Interv{}).Where("netid = ?", stuInfo.NetID).Updates(&intervInfo).Error; err != nil {
+				logger.DatabaseLogger.Errorf("更新面试信息失败：%v", err)
+				return common.ErrNew(err, common.SysErr)
+			}
+		}
+		return nil
+	})
 }
 
 // Excelize 获取学生信息并导出为excel
