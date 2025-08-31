@@ -170,7 +170,6 @@ func (*Interv) Update(info model.Interv) error {
 				return common.ErrNew(err, common.SysErr)
 			}
 		}
-		// 如果更新为不通过，则星级和评价清空，且强制设置为不通过
 		if err := tx.Model(&model.Interv{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
 			logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
 			return common.ErrNew(err, common.SysErr)
