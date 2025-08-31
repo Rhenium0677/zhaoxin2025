@@ -157,17 +157,26 @@ func (*Interv) Update(info model.Interv) error {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
-	if err := model.DB.Model(&model.Interv{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
-		logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
-		return common.ErrNew(err, common.SysErr)
-	}
-	if info.Evaluation != "" {
-		if err := model.DB.Model(&model.Interv{}).Where("id = ?", info.ID).Update("status", 2).Error; err != nil {
-			logger.DatabaseLogger.Errorf("更新面试状态失败: %v", err)
+	return model.DB.Transaction(func(tx *gorm.DB) error {
+		if info.Evaluation != "" {
+			if err := tx.Model(&model.Interv{}).Where("id = ?", info.ID).Update("status", 2).Error; err != nil {
+				logger.DatabaseLogger.Errorf("更新面试状态失败: %v", err)
+				return common.ErrNew(err, common.SysErr)
+			}
+		}
+		if info.Pass == 2 {
+			if err := tx.Model(&model.Interv{}).Where("id = ?", info.ID).Update("pass", 0).Error; err != nil {
+				logger.DatabaseLogger.Errorf("更新面试通过状态失败: %v", err)
+				return common.ErrNew(err, common.SysErr)
+			}
+		}
+		// 如果更新为不通过，则星级和评价清空，且强制设置为不通过
+		if err := tx.Model(&model.Interv{}).Where("id = ?", info.ID).Updates(&info).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
 			return common.ErrNew(err, common.SysErr)
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 // Delete 批量删除面试记录
