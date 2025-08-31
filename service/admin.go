@@ -157,6 +157,31 @@ func (*Admin) UpdateStu(stuInfo model.Stu, intervInfo model.Interv) error {
 	})
 }
 
+func (*Admin) DeleteStu(id int64) error {
+	// 检查学生是否存在
+	var existed model.Stu
+	if err := model.DB.Model(&model.Stu{}).Where("id = ?", id).First(&existed).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return common.ErrNew(errors.New("学生不存在"), common.NotFoundErr)
+		}
+		logger.DatabaseLogger.Errorf("检查学生是否存在失败：%v", err)
+		return common.ErrNew(err, common.SysErr)
+	}
+	return model.DB.Transaction(func(tx *gorm.DB) error {
+		// 删除学生信息
+		if err := tx.Model(&model.Stu{}).Where("id = ?", id).Delete(&model.Stu{}).Error; err != nil {
+			logger.DatabaseLogger.Errorf("删除学生信息失败：%v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+		// 删除面试信息
+		if err := tx.Model(&model.Interv{}).Where("netid = ?", existed.NetID).Delete(&model.Interv{}).Error; err != nil {
+			logger.DatabaseLogger.Errorf("删除面试信息失败：%v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+		return nil
+	})
+}
+
 // Excelize 获取学生信息并导出为excel
 func (*Admin) Excelize() error {
 	// 获取所有学生信息

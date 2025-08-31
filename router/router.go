@@ -23,6 +23,7 @@ func InitRouter(r *gin.Engine) {
 			adminRouter.PUT("/", ctr.Admin.Update)
 			adminRouter.GET("/stu", ctr.Admin.GetStu)
 			adminRouter.PUT("/stu:id", ctr.Admin.UpdateStu)
+			adminRouter.DELETE("/stu:id", ctr.Admin.DeleteStu)
 			adminRouter.GET("/excel", ctr.Admin.Excelize)
 			adminRouter.GET("/stat", ctr.Admin.Stat)
 			adminRouter.GET("/aliyun", ctr.Admin.AliyunSendMsg)

@@ -184,6 +184,19 @@ func (*Admin) UpdateStu(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
+func (*Admin) DeleteStu(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	if err := srv.Admin.DeleteStu(int64(id)); err != nil {
+		c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
+}
+
 // Excelize 将学生数据输出成excel
 func (*Admin) Excelize(c *gin.Context) {
 	// 获取学生信息
