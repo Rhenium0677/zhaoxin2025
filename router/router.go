@@ -45,6 +45,7 @@ func InitRouter(r *gin.Engine) {
 			stuRouter.PUT("/message", ctr.Stu.UpdateMessage)
 			stuRouter.GET("/date", ctr.Stu.GetIntervDate)
 			stuRouter.GET("/interv", ctr.Stu.GetInterv)
+			stuRouter.PUT("/interv:id", ctr.Stu.ReAppointInterv)
 			stuRouter.POST("/interv:id", ctr.Stu.AppointInterv)
 			stuRouter.DELETE("/interv:id", ctr.Stu.CancelInterv)
 			stuRouter.GET("/result", ctr.Stu.GetRes, middleware.CheckTime())

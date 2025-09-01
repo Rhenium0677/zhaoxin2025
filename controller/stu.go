@@ -210,7 +210,7 @@ func (*Stu) GetInterv(c *gin.Context) {
 	}
 	var available, unavailable []model.Interv
 	for _, value := range data {
-		if (value.NetID != nil && *(value.NetID) != session.NetID) || time.Now().After(value.Time.Add(-1 * time.Hour)) {
+		if (value.NetID != nil && *(value.NetID) != session.NetID) || time.Now().After(value.Time.Add(-1*time.Hour)) {
 			unavailable = append(unavailable, value)
 		} else {
 			available = append(available, value)
@@ -225,6 +225,27 @@ func (*Stu) GetInterv(c *gin.Context) {
 		Available:   available,
 		Unavailable: unavailable,
 	}))
+}
+
+func (s *Stu) ReAppointInterv(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.Error(common.ErrNew(err, common.ParamErr))
+		return
+	}
+	// 从Gin上下文中获取用户session
+	session := SessionGet(c, "user-session").(UserSession)
+	if err := NetIDValid(session); err != nil {
+		c.Error(common.ErrNew(err, common.OpErr)) // 如果NetID无效，返回错误
+		return
+	}
+	// 调用服务层预约面试
+	if err := srv.Stu.ReAppointInterv(session.NetID, id); err != nil {
+		c.Error(err)
+		return
+	}
+	// 返回成功响应
+	c.JSON(http.StatusOK, ResponseNew(c, nil))
 }
 
 // AppointInterv 学生预约面试
