@@ -163,7 +163,7 @@ func (*Interv) Update(c *gin.Context) {
 		Department  model.Department `json:"department" binding:"omitempty,oneof=tech video art"`
 		Star        int              `json:"star" binding:"omitempty"`
 		Evaluation  string           `json:"evaluation" binding:"omitempty"`
-		Pass        int              `json:"pass" binding:"omitempty,oneof=0 1 2"`
+		Pass        int              `json:"pass" binding:"omitempty,oneof=0 1 2 3"`
 		QueID       int              `json:"queid" binding:"omitempty"`
 	}
 	if err := c.ShouldBindJSON(&info); err != nil {

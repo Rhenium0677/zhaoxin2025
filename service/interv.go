@@ -169,14 +169,16 @@ func (*Interv) Update(info model.Interv) error {
 		info.ID = record.ID
 	}
 	return model.DB.Transaction(func(tx *gorm.DB) error {
-		if info.Evaluation != "" {
-			if err := tx.Model(&model.Interv{}).Where("id = ?", info.ID).Update("status", 2).Error; err != nil {
+		if info.Status == 3 {
+			if err := tx.Model(&model.Interv{}).Where("id = ?)", info.ID).
+				Update("status", 0).Error; err != nil {
 				logger.DatabaseLogger.Errorf("更新面试状态失败: %v", err)
 				return common.ErrNew(err, common.SysErr)
 			}
 		}
 		if info.Pass == 2 {
-			if err := tx.Model(&model.Interv{}).Where("id = ?", info.ID).Update("pass", 0).Error; err != nil {
+			if err := tx.Model(&model.Interv{}).Where("id = ?", info.ID).
+				Update("pass", 0).Error; err != nil {
 				logger.DatabaseLogger.Errorf("更新面试通过状态失败: %v", err)
 				return common.ErrNew(err, common.SysErr)
 			}
