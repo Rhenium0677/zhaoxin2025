@@ -209,33 +209,37 @@ func (*Interv) Delete(info []int) error {
 	return nil
 }
 
-// Swap 交换两个面试记录
+// Swap 交换两个面试记录的时间
 func (*Interv) Swap(id1, id2 int) error {
 	var record1, record2 model.Interv
-	// 检查要交换的记录是否存在
-	if err := model.DB.Model(&model.Interv{}).Where("id = ?", id1).First(&record1).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
-		}
-		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
-		return common.ErrNew(err, common.SysErr)
-	}
-	if err := model.DB.Model(&model.Interv{}).Where("id = ?", id2).First(&record2).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
-		}
-		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
-		return common.ErrNew(err, common.SysErr)
-	}
-	record1.ID, record2.ID = record2.ID, record1.ID         // 交换ID
-	record1.Time, record2.Time = record2.Time, record1.Time // 交换时间
-	return model.DB.Model(&model.Interv{}).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ?", id1).Updates(&record1).Error; err != nil {
-			logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
+
+	// 在事务中执行所有操作，避免数据不一致
+	return model.DB.Transaction(func(tx *gorm.DB) error {
+		// 检查要交换的记录是否存在
+		if err := tx.Where("id = ?", id1).First(&record1).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
+			}
+			logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 			return common.ErrNew(err, common.SysErr)
 		}
-		if err := tx.Where("id = ?", id2).Updates(&record2).Error; err != nil {
-			logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
+
+		if err := tx.Where("id = ?", id2).First(&record2).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return common.ErrNew(errors.New("禁止虚空索敌"), common.NotFoundErr)
+			}
+			logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+
+		// 只交换时间字段
+		if err := tx.Model(&model.Interv{}).Where("id = ?", id1).Update("time", record2.Time).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新面试记录时间失败: %v", err)
+			return common.ErrNew(err, common.SysErr)
+		}
+
+		if err := tx.Model(&model.Interv{}).Where("id = ?", id2).Update("time", record1.Time).Error; err != nil {
+			logger.DatabaseLogger.Errorf("更新面试记录时间失败: %v", err)
 			return common.ErrNew(err, common.SysErr)
 		}
 		return nil
