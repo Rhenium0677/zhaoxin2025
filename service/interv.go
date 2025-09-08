@@ -227,7 +227,8 @@ func (*Interv) Swap(id1, id2 int) error {
 		logger.DatabaseLogger.Errorf("查询面试记录失败: %v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
-	record1.ID, record2.ID = record2.ID, record1.ID // 交换ID
+	record1.ID, record2.ID = record2.ID, record1.ID         // 交换ID
+	record1.Time, record2.Time = record2.Time, record1.Time // 交换时间
 	return model.DB.Model(&model.Interv{}).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("id = ?", id1).Updates(&record1).Error; err != nil {
 			logger.DatabaseLogger.Errorf("更新面试记录失败: %v", err)
