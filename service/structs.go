@@ -10,6 +10,7 @@ type FailSend struct {
 	ErrCode int    `json:"errcode"`
 }
 
+// 已弃用，改为直接使用 Stu
 type StuMsgInfo struct {
 	Name   string
 	Time   time.Time

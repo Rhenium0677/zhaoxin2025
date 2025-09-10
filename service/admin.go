@@ -1,18 +1,20 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-	dysmsapi20170525 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
-	util "github.com/alibabacloud-go/tea-utils/v2/service"
-	"github.com/alibabacloud-go/tea/tea"
 	"strings"
 	"time"
 	"zhaoxin2025/common"
 	"zhaoxin2025/config"
 	"zhaoxin2025/logger"
 	"zhaoxin2025/model"
+
+	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
+	dysmsapi20170525 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
+	util "github.com/alibabacloud-go/tea-utils/v2/service"
+	"github.com/alibabacloud-go/tea/tea"
 
 	"gorm.io/gorm"
 )
@@ -296,7 +298,12 @@ func sendItvResMsg(pass bool, number string, name string, department string) err
 			}
 		}()
 		// 复制代码运行请自行打印 API 的返回值
-		_, _err = client.SendSmsWithOptions(sendSmsRequest, runtime)
+		result, _err := client.SendSmsWithOptions(sendSmsRequest, runtime)
+		if jsonData, err := json.MarshalIndent(result, "", "  "); err == nil {
+			println(string(jsonData))
+		} else {
+			println(err)
+		}
 		if _err != nil {
 			return _err
 		}
@@ -405,11 +412,9 @@ func CreateClient(accessKeyId *string, accessKeySecret *string) (_result *dysmsa
 // 有关数据库的操作
 func (a *Admin) AliyunSendItvResMsg() (cocacola interface{}, err error) {
 	// 向Aliyun发送请求
-	var user []StuMsgInfo
+	var user []model.Stu
 	if err = model.DB.
-		Table("students").
-		Joins("LEFT JOIN interviews ON students.netid = interviews.netid").
-		Select("students.*", "interviews.time").
+		Model(&model.Stu{}).Preload("Interv").
 		Find(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, common.ErrNew(errors.New("当前学号不存在"), common.NotFoundErr)
@@ -417,19 +422,24 @@ func (a *Admin) AliyunSendItvResMsg() (cocacola interface{}, err error) {
 		return nil, common.ErrNew(errors.New("没有查到,请联系管理员解决"), common.SysErr)
 	}
 	for _, value := range user {
+		if value.Interv == nil {
+			continue
+		}
 		var check bool
-		if value.Interv == "已通过" {
+		if value.Interv.Pass == 1 {
 			check = true
-		} else if value.Interv == "未通过" {
+		} else if value.Interv.Pass == 0 {
 			check = false
 		} else {
 			continue
 		}
 		// 发短信在这里
-		err := sendItvResMsg(check, value.Phone, value.Name, value.First)
+		err := sendItvResMsg(check, value.Phone, value.Name, string(value.Depart))
 		if err != nil {
+			logger.DatabaseLogger.Errorf("发送短信失败: %v", err)
 			continue
 		}
+		logger.DatabaseLogger.Infof("发送短信成功: %s", value.Phone)
 	}
 	return nil, nil
 }
