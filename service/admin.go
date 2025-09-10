@@ -332,7 +332,7 @@ func AliyunSendItvTimeMsg() (fs []FailSend, err error) {
 	var intervs []model.Interv
 	if err := model.DB.Model(&model.Interv{}).
 		Where("time > ? AND time < ?", time.Now().Add(20*time.Minute), time.Now().Add(30*time.Minute)).
-		Not("netid = ?", "").Find(&intervs).Error; err != nil {
+		Not("netid = ?", nil).Find(&intervs).Error; err != nil {
 		return fs, common.ErrNew(errors.New("查询学生信息出错"), common.SysErr)
 	}
 	for _, interv := range intervs {

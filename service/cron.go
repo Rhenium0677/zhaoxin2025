@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"github.com/robfig/cron/v3"
 	// "sync"
 	"time"
@@ -22,12 +21,9 @@ func RefreshAccessToken() {
 		// 启动一个 goroutine，在 5 分钟后重试
 		go func() {
 			time.Sleep(5 * time.Minute)
-			fmt.Println("[Cron] Retry: 5 分钟后尝试刷新 AccessToken... ")
 			err := GetAccessToken()
 			if err != nil {
 				logger.DatabaseLogger.Errorf("[Cron] Retry: 刷新 AccessToken 仍然失败: %v\n", err)
-			} else {
-				fmt.Println("[Cron] Retry: AccessToken 刷新成功。")
 			}
 		}()
 		return
@@ -84,17 +80,15 @@ func Send() {
 		))
 		// 每10分钟执行一次，获取需要发送的订阅消息
 		if _, err := c.AddFunc("@every 10m", func() {
-			logger.DatabaseLogger.Infof("[Cron] 开始执行发送面试时间订阅消息...")
 			var record []model.Stu
 			if err := model.DB.Model(&model.Stu{}).Where("message > 0").Preload("Interv").Find(&record).Error; err != nil {
 				logger.DatabaseLogger.Errorf("[Cron] 查询学生信息失败: %v\n", err)
 				return
 			}
 			for _, stu := range record {
-				message := stu.Message				
+				message := stu.Message
 				if (message<<1)&1 == 1 && stu.Interv != nil && time.Now().Add(20*time.Minute).Before(stu.Interv.Time) && time.Now().Add(30*time.Minute).After(stu.Interv.Time) {
 					err := SendTime(stu)
-					logger.DatabaseLogger.Infof("[Cron] 正在为 %s 发送面试时间通知", stu.OpenID)
 					if err != nil {
 						logger.DatabaseLogger.Errorf("[Cron] 添加面试时间订阅消息失败: %v\n", err)
 					}
@@ -105,27 +99,26 @@ func Send() {
 		}
 		c.Start()
 	}()
-	go func() {
-		c := cron.New(cron.WithChain(
-			cron.SkipIfStillRunning(cron.DefaultLogger),
-			cron.Recover(cron.DefaultLogger),
-		))
-		// 每10分钟执行一次，获取并发送面试时间消息
-		if _, err := c.AddFunc("@every 10m", func() {
-			logger.DatabaseLogger.Infof("[Cron] 开始执行发送面试时间短信消息...")
-			fd, err := AliyunSendItvTimeMsg()
-			if err != nil {
-				logger.DatabaseLogger.Errorf("[Cron] 获取面试时间短信消息失败: %v\n", err)
-				return
-			}
-			for _, f := range fd {
-				if f.ErrCode != 0 {
-					logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信消息失败, NetID: %s, ErrCode: %d\n", f.NetID, f.ErrCode)
-				}
-			}
-		}); err != nil {
-			logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信任务失败: %v\n", err)
-		}
-		c.Start()
-	}()
+	//go func() {
+	//	c := cron.New(cron.WithChain(
+	//		cron.SkipIfStillRunning(cron.DefaultLogger),
+	//		cron.Recover(cron.DefaultLogger),
+	//	))
+	//	// 每10分钟执行一次，获取并发送面试时间消息
+	//	if _, err := c.AddFunc("@every 10m", func() {
+	//		fd, err := AliyunSendItvTimeMsg()
+	//		if err != nil {
+	//			logger.DatabaseLogger.Errorf("[Cron] 获取面试时间短信消息失败: %v\n", err)
+	//			return
+	//		}
+	//		for _, f := range fd {
+	//			if f.ErrCode != 0 {
+	//				logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信消息失败, NetID: %s, ErrCode: %d\n", f.NetID, f.ErrCode)
+	//			}
+	//		}
+	//	}); err != nil {
+	//		logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信任务失败: %v\n", err)
+	//	}
+	//	c.Start()
+	//}()
 }
