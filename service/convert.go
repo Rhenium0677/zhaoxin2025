@@ -9,6 +9,20 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+// Depart 将数据库中存储的字段改成中文
+func DepartToChinese(depart model.Department) string {
+	switch depart {
+	case model.Tech:
+		return "技术部"
+	case model.Art:
+		return "美工部"
+	case model.Video:
+		return "视频部"
+	default:
+		return "未知"
+	}
+}
+
 // TimeRange 定义一个时间范围结构体
 // 包含开始时间和结束时间
 type TimeRange struct {

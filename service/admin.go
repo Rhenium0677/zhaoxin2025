@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -267,7 +266,42 @@ func (*Admin) SendResultMessage() error {
 
 // 发送短信
 // 有关短信的操作
-// 这是发送面试结果短息的函数
+func (a *Admin) AliyunSendItvResMsg() (cocacola interface{}, err error) {
+	// 向Aliyun发送请求
+	var user []model.Stu
+	if err = model.DB.
+		Model(&model.Stu{}).Preload("Interv").
+		Find(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, common.ErrNew(errors.New("当前学号不存在"), common.NotFoundErr)
+		}
+		return nil, common.ErrNew(errors.New("没有查到,请联系管理员解决"), common.SysErr)
+	}
+	for _, value := range user {
+		if value.Interv == nil {
+			continue
+		}
+		var check bool
+		if value.Interv.Pass == 1 {
+			check = true
+		} else if value.Interv.Pass == 0 {
+			check = false
+		} else {
+			continue
+		}
+		// 发短信在这里
+		err := sendItvResMsg(check, value.Phone, value.Name, DepartToChinese(value.Depart))
+		//err := sendItvTimeMsg(value.Phone, value.Name, value.Interv.Time.Format("2006年1月2日 15:04"), DepartToChinese(value.Depart))
+		if err != nil {
+			logger.DatabaseLogger.Errorf("发送短信失败: %v", err)
+			continue
+		}
+		logger.DatabaseLogger.Infof("发送短信成功: %s", value.Phone)
+	}
+	return nil, nil
+}
+
+// 这是发送面试结果短信的函数
 func sendItvResMsg(pass bool, number string, name string, department string) error {
 	client, _err := CreateClient(tea.String(config.Config.AlibabaCloudAccessKeyID), tea.String(config.Config.AlibabaCloudAccessKeySecret))
 	if _err != nil {
@@ -278,14 +312,14 @@ func sendItvResMsg(pass bool, number string, name string, department string) err
 	// 短信对应代码,结合自己的短信格式的代码进行设置
 
 	if pass {
-		tpCode = "SMS_463215609"
+		tpCode = "SMS_495000002"
 	} else {
-		tpCode = "SMS_463195599"
+		tpCode = "SMS_494950005"
 	}
 
 	sendSmsRequest := &dysmsapi20170525.SendSmsRequest{
 		PhoneNumbers:  tea.String(number),
-		SignName:      tea.String("挑战网"),
+		SignName:      tea.String("西咸新区挑战信息科技"),
 		TemplateCode:  tea.String(tpCode),
 		TemplateParam: tea.String(fmt.Sprintf("{\"name\":\"%s\",\"department\":\"%s\"}", name, department)),
 	}
@@ -298,12 +332,12 @@ func sendItvResMsg(pass bool, number string, name string, department string) err
 			}
 		}()
 		// 复制代码运行请自行打印 API 的返回值
-		result, _err := client.SendSmsWithOptions(sendSmsRequest, runtime)
-		if jsonData, err := json.MarshalIndent(result, "", "  "); err == nil {
-			println(string(jsonData))
-		} else {
-			println(err)
-		}
+		_, _err := client.SendSmsWithOptions(sendSmsRequest, runtime)
+		//if jsonData, err := json.MarshalIndent(result, "", "  "); err == nil {
+		//	println(string(jsonData))
+		//} else {
+		//	println(err)
+		//}
 		if _err != nil {
 			return _err
 		}
@@ -341,7 +375,7 @@ func AliyunSendItvTimeMsg() (fs []FailSend, err error) {
 			fs = append(fs, FailSend{NetID: stu.NetID, ErrCode: -1})
 		}
 		intervTime := interv.Time
-		err := sendItvTimeMsg(stu.Phone, stu.Name, fmt.Sprintf("%d年%d月%d日 %s:%s", intervTime.Year(), intervTime.Month(), intervTime.Day(), intervTime.String()[11:13], intervTime.String()[14:16]), string(stu.Depart))
+		err := sendItvTimeMsg(stu.Phone, stu.Name, fmt.Sprintf("%d年%d月%d日 %s:%s", intervTime.Year(), intervTime.Month(), intervTime.Day(), intervTime.String()[11:13], intervTime.String()[14:16]), DepartToChinese(stu.Depart))
 		if err != nil {
 			fs = append(fs, FailSend{NetID: stu.NetID, ErrCode: -1})
 		}
@@ -357,8 +391,8 @@ func sendItvTimeMsg(phone string, name string, time string, department string) (
 	}
 	sendSmsRequest := &dysmsapi20170525.SendSmsRequest{
 		PhoneNumbers:  tea.String(phone),
-		SignName:      tea.String("挑战网"),
-		TemplateCode:  tea.String("SMS_471010064"),
+		SignName:      tea.String("西咸新区挑战信息科技"),
+		TemplateCode:  tea.String("SMS_494950004"),
 		TemplateParam: tea.String(fmt.Sprintf("{\"name\":\"%s\",\"time\":\"%s\",\"department\":\"%s\"}", name, time, department)),
 	}
 	runtime := &util.RuntimeOptions{}
@@ -370,6 +404,11 @@ func sendItvTimeMsg(phone string, name string, time string, department string) (
 		}()
 		// 复制代码运行请自行打印 API 的返回值
 		_, _err := client.SendSmsWithOptions(sendSmsRequest, runtime)
+		//if jsonData, err := json.MarshalIndent(result, "", "  "); err == nil {
+		//	println(string(jsonData))
+		//} else {
+		//	println(err)
+		//}
 		if _err != nil {
 			return _err
 		}
@@ -406,40 +445,4 @@ func CreateClient(accessKeyId *string, accessKeySecret *string) (_result *dysmsa
 	_result = &dysmsapi20170525.Client{}
 	_result, _err = dysmsapi20170525.NewClient(config)
 	return _result, _err
-}
-
-// 发送短信
-// 有关数据库的操作
-func (a *Admin) AliyunSendItvResMsg() (cocacola interface{}, err error) {
-	// 向Aliyun发送请求
-	var user []model.Stu
-	if err = model.DB.
-		Model(&model.Stu{}).Preload("Interv").
-		Find(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, common.ErrNew(errors.New("当前学号不存在"), common.NotFoundErr)
-		}
-		return nil, common.ErrNew(errors.New("没有查到,请联系管理员解决"), common.SysErr)
-	}
-	for _, value := range user {
-		if value.Interv == nil {
-			continue
-		}
-		var check bool
-		if value.Interv.Pass == 1 {
-			check = true
-		} else if value.Interv.Pass == 0 {
-			check = false
-		} else {
-			continue
-		}
-		// 发短信在这里
-		err := sendItvResMsg(check, value.Phone, value.Name, string(value.Depart))
-		if err != nil {
-			logger.DatabaseLogger.Errorf("发送短信失败: %v", err)
-			continue
-		}
-		logger.DatabaseLogger.Infof("发送短信成功: %s", value.Phone)
-	}
-	return nil, nil
 }

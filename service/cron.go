@@ -99,26 +99,26 @@ func Send() {
 		}
 		c.Start()
 	}()
-	//go func() {
-	//	c := cron.New(cron.WithChain(
-	//		cron.SkipIfStillRunning(cron.DefaultLogger),
-	//		cron.Recover(cron.DefaultLogger),
-	//	))
-	//	// 每10分钟执行一次，获取并发送面试时间消息
-	//	if _, err := c.AddFunc("@every 10m", func() {
-	//		fd, err := AliyunSendItvTimeMsg()
-	//		if err != nil {
-	//			logger.DatabaseLogger.Errorf("[Cron] 获取面试时间短信消息失败: %v\n", err)
-	//			return
-	//		}
-	//		for _, f := range fd {
-	//			if f.ErrCode != 0 {
-	//				logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信消息失败, NetID: %s, ErrCode: %d\n", f.NetID, f.ErrCode)
-	//			}
-	//		}
-	//	}); err != nil {
-	//		logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信任务失败: %v\n", err)
-	//	}
-	//	c.Start()
-	//}()
+	go func() {
+		c := cron.New(cron.WithChain(
+			cron.SkipIfStillRunning(cron.DefaultLogger),
+			cron.Recover(cron.DefaultLogger),
+		))
+		// 每10分钟执行一次，获取并发送面试时间消息
+		if _, err := c.AddFunc("@every 10m", func() {
+			fd, err := AliyunSendItvTimeMsg()
+			if err != nil {
+				logger.DatabaseLogger.Errorf("[Cron] 获取面试时间短信消息失败: %v\n", err)
+				return
+			}
+			for _, f := range fd {
+				if f.ErrCode != 0 {
+					logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信消息失败, NetID: %s, ErrCode: %d\n", f.NetID, f.ErrCode)
+				}
+			}
+		}); err != nil {
+			logger.DatabaseLogger.Errorf("[Cron] 发送面试时间短信任务失败: %v\n", err)
+		}
+		c.Start()
+	}()
 }
