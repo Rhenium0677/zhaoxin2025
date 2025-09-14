@@ -291,7 +291,6 @@ func (a *Admin) AliyunSendItvResMsg() (cocacola interface{}, err error) {
 		}
 		// 发短信在这里
 		err := sendItvResMsg(check, value.Phone, value.Name, DepartToChinese(value.Depart))
-		//err := sendItvTimeMsg(value.Phone, value.Name, value.Interv.Time.Format("2006年1月2日 15:04"), DepartToChinese(value.Depart))
 		if err != nil {
 			logger.DatabaseLogger.Errorf("发送短信失败: %v", err)
 			continue
@@ -362,25 +361,37 @@ func sendItvResMsg(pass bool, number string, name string, department string) err
 	return _err
 }
 
-func AliyunSendItvTimeMsg() (fs []FailSend, err error) {
-	var intervs []model.Interv
-	if err := model.DB.Model(&model.Interv{}).
-		Where("time > ? AND time < ?", time.Now().Add(20*time.Minute), time.Now().Add(30*time.Minute)).
-		Not("netid = ?", nil).Find(&intervs).Error; err != nil {
-		return fs, common.ErrNew(errors.New("查询学生信息出错"), common.SysErr)
+func AliyunSendItvTimeMsg() (fails []FailSend, err error) {
+	now := time.Now()
+	start := now.Add(20 * time.Minute)
+	end := now.Add(30 * time.Minute)
+
+	// 一次性联表查询，避免循环里再查
+	var rows []struct {
+		NetID  string           `gorm:"column:netid"`
+		Time   time.Time        `gorm:"column:time"`
+		Phone  string           `gorm:"column:phone"`
+		Name   string           `gorm:"column:name"`
+		Depart model.Department `gorm:"column:depart"`
 	}
-	for _, interv := range intervs {
-		var stu model.Stu
-		if interv.NetID == nil || model.DB.Model(&model.Stu{}).Where("netid = ?", interv.NetID).First(&stu).Error != nil {
-			fs = append(fs, FailSend{NetID: stu.NetID, ErrCode: -1})
-		}
-		intervTime := interv.Time
-		err := sendItvTimeMsg(stu.Phone, stu.Name, fmt.Sprintf("%d年%d月%d日 %s:%s", intervTime.Year(), intervTime.Month(), intervTime.Day(), intervTime.String()[11:13], intervTime.String()[14:16]), DepartToChinese(stu.Depart))
-		if err != nil {
-			fs = append(fs, FailSend{NetID: stu.NetID, ErrCode: -1})
+	if e := model.DB.
+		Table("intervs").
+		Select("stus.netid, intervs.time, stus.phone, stus.name, stus.depart").
+		Joins("JOIN stus ON stus.netid = intervs.netid").
+		Where("intervs.time BETWEEN ? AND ?", start, end).
+		Find(&rows).Error; e != nil {
+		return fails, common.ErrNew(errors.New("查询面试记录失败"), common.SysErr)
+	}
+
+	for _, r := range rows {
+		sendErr := sendItvTimeMsg(r.Phone, r.Name, r.Time.Format("2006年1月2日 15:04"), DepartToChinese(r.Depart))
+		if sendErr != nil {
+			fails = append(fails, FailSend{NetID: r.NetID, ErrCode: -1})
+			logger.DatabaseLogger.Errorf("发送面试时间短信失败 netid=%s err=%v", r.NetID, sendErr)
 		}
 	}
-	return fs, nil
+
+	return fails, nil
 }
 
 // 发送面试通知短信
