@@ -123,7 +123,7 @@ func Excelize(data []model.Stu, filename string) error {
 		}
 		if stu.QueID != 0 {
 			var question string
-			if err := model.DB.Model(&model.Que{}).Where("id = ?", stu.QueID).Select("question").Scan(&question).Error; err != nil {
+			if err := model.DB.Model(&model.Que{}).Where("id = ?", stu.QueID).Select("question").Scan(&question).Error; err == nil {
 				rowData = append(rowData, question)
 			}
 		}

@@ -187,7 +187,7 @@ func (*Admin) DeleteStu(id int64) error {
 func (*Admin) Excelize() error {
 	// 获取所有学生信息
 	var data []model.Stu
-	if err := model.DB.Model(&model.Stu{}).Preload("Interv").Find(&data).Error; err != nil {
+	if err := model.DB.Model(&model.Stu{}).Preload("Interv").Where("netid LIKE ?", "2%").Find(&data).Error; err != nil {
 		logger.DatabaseLogger.Errorf("获取学生信息失败：%v", err)
 		return common.ErrNew(err, common.SysErr)
 	}
