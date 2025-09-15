@@ -277,9 +277,13 @@ func (a *Admin) AliyunSendItvResMsg() (cocacola interface{}, err error) {
 		}
 		return nil, common.ErrNew(errors.New("没有查到,请联系管理员解决"), common.SysErr)
 	}
+	counter := 0
 	for _, value := range user {
 		if value.Interv == nil {
 			continue
+		}
+		if counter%10 == 0 && counter != 0 {
+			time.Sleep(3 * time.Second) // 每发送10条短信，休息3秒
 		}
 		var check bool
 		if value.Interv.Pass == 1 {
@@ -292,10 +296,11 @@ func (a *Admin) AliyunSendItvResMsg() (cocacola interface{}, err error) {
 		// 发短信在这里
 		err := sendItvResMsg(check, value.Phone, value.Name, DepartToChinese(value.Depart))
 		if err != nil {
-			logger.DatabaseLogger.Errorf("发送短信失败: %v", err)
+			logger.DatabaseLogger.Errorf("name: %s 发送短信失败: %v", err)
 			continue
 		}
-		logger.DatabaseLogger.Infof("发送短信成功: %s", value.Phone)
+		counter += 1
+		logger.DatabaseLogger.Infof("name: %s 发送短信成功: %s", value.Phone)
 	}
 	return nil, nil
 }
