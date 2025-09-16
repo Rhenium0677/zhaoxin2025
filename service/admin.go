@@ -253,7 +253,7 @@ func (*Admin) SendResultMessage() error {
 		return common.ErrNew(err, common.SysErr)
 	}
 	for _, stu := range data {
-		if stu.Message <= 4 {
+		if stu.Message < 4 || stu.Interv == nil {
 			continue
 		}
 		err := SendResult(stu)
