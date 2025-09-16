@@ -296,11 +296,11 @@ func (a *Admin) AliyunSendItvResMsg() (cocacola interface{}, err error) {
 		// 发短信在这里
 		err := sendItvResMsg(check, value.Phone, value.Name, DepartToChinese(value.Depart))
 		if err != nil {
-			logger.DatabaseLogger.Errorf("name: %s 发送短信失败: %v", err)
+			logger.DatabaseLogger.Errorf("name: %s 发送短信失败: %v", value.Phone, err)
 			continue
 		}
 		counter += 1
-		logger.DatabaseLogger.Infof("name: %s 发送短信成功: %s", value.Phone)
+		logger.DatabaseLogger.Infof("name: %s 发送短信成功", value.Phone)
 	}
 	return nil, nil
 }
